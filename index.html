@@ -1,0 +1,56 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <title>Explanation Evaluation</title>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/4.5.2/css/bootstrap.min.css">
+    <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.5.1/jquery.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/popper.js/1.16.0/umd/popper.min.js"></script>
+    <script src="https://maxcdn.bootstrapcdn.com/bootstrap/4.5.2/js/bootstrap.min.js"></script>
+</head>
+
+<body>
+    <div class="jumbotron jumbotron-fluid">
+        <div class="container-fluid">
+            <h1>Know Thy User's Mind: Generating Helpful Explanations by Modeling Human Interpretation</h1>
+            <p>Arijit Ray, Michael Cogswell, Xiao Lin, Kamran Alipour, Ajay Divakaran, Yi Yao, Giedrius Burachas</p>
+            
+        </div> 
+    </div>
+
+    <div class='container'>
+
+        <div class="row">
+            <div class="card">
+                <div class="card-body">
+                    Abstract:
+                    <hr>
+                    Attention maps, a popular explanation method for Visual Question Answering (VQA), 
+                    are supposed to help users understand models by highlighting parts of the image/question 
+                    used by the model to infer answers. However, we observe a significant number of cases where 
+                    explanations show a VQA model paying attention to relevant regions, yet the model fails to 
+                    generate the correct answer. These explanations can mislead users who guess the model will be 
+                    correct when it looks at relevant regions. In this paper we simulate this thought process, 
+                    generating helpful explanations by ensuring correctness can be judged from relevance. 
+                    We propose two ways to generate new explanations: 1) choosing transformer-based attention maps 
+                    that optimize our notion of helpfulness and 2) training a Justifying Module that learns to point 
+                    to justifying evidence and generate error maps that point to regions where the model may make a
+                    mistake. We design automated metrics of helpfulness based on our idea of human interpretation 
+                    and show that our explanations are more helpful according to these metrics. To verify our metrics
+                    and explanations, we conduct user studies to show that users can predict the model's performance
+                    better when using our more helpful explanations.
+                </div>
+            </div>
+        </div>
+        
+        <div class="row">
+            ArXiv Paper and Online evaluation platform coming soon...
+        </div>
+
+    </div>
+
+    <hr>
+
+</body>
+    
