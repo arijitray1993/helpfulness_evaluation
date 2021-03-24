@@ -1,0 +1,3599 @@
+<meta charset="utf-8">                    <meta name="viewport" content="width=device-width, initial-scale=1">                    <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/3.4.0/css/bootstrap.min.css">                    <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.4.1/jquery.min.js"></script>                    <script src="https://maxcdn.bootstrapcdn.com/bootstrap/3.4.0/js/bootstrap.min.js"></script>
+<title>
+Attention and Error Map Visualization
+</title>
+<head>
+<h2> Attention and Error Map Visualization</h2>
+</head>
+<body><div class='container-fluid'>
+    <h2>How to interpret these maps?</h2>
+    <p>Here, we show 100 randomly sampled attention and error maps from our test data (no cherry picking). Specifically, for a given image and question, we show the following 
+        in the respective column order: VQA-Net's Answer,
+        the ground truth (GT) answer, our Error Map (ErrMap), our Justifying Module Attention Maps (J-Att), our best performing BestBERT Attention Maps (BestBERT),
+        the baseline attention (BaselineBERT) and the human-annotated attention map. </p>
+    <p>
+        ErrMap: Ideally, the VQA should be wrong if this strongly points to relevant regions in the image (eg, index 12). 
+        Note how this map sometimes points to the relevant regions, but is weaker than the attention maps (BestBERT or J-Att), 
+        and hence the VQA is
+        correct (index 53). Note that the ErrMap visualization here is slightly different from the paper. We have multiplied the map with the Failure prediction probability for a better visualization. 
+    </p>
+    <p>
+        BestBERT: Ideally, this should point to relevant regions when the VQA is correct and not when the VQA is wrong. 
+        Eg, Index 5, bestBERT points to relevant areas, answer is correct; Index 33, it points to the food instead of the table, hence answer incorrect.  
+    </p>
+    <p>
+        J-Att: Ideally, this should point to relevant regions when the VQA is correct and not when the VQA is wrong. However, since this was trained to be 
+        similar to human-annotated attention, note how this attention is mostly always relevant and centered even when the VQA is wrong. 
+    </p>
+    <p>
+        BaselineBERT: Ideally, this should point to relevant regions when the VQA is correct and not when the VQA is wrong. However, it does so less on average than compared to BestBERT 
+        - that is, it often looks at relevant regions when the VQA is incorrect and vice versa. 
+        Eg, Index 54, the BaselineBERT looks at the orange juice and still answers no.
+    </p>
+
+    <p><b>Overall, note how looking the attention maps alone is mostly insufficient to explain why the machine is correct/wrong </b></p>
+    <p><b>Now try looking at the Error Map as well.</b></p>
+    <p><b> Interpreting ErrMap + BestBERT/J-Att/BaselineBERT Attentions: For the best explanation, look at both the Error Map (ErrMap) and either of our Attention Maps.
+        Note how: 
+        <ol>
+            <li>When there are no error regions or they are away from the attended regions (eg, index 2), the VQA is mostly correct. </li>
+            <li>When the error map strongly points to the attention map regions (eg, index 12), the VQA fails </li>
+            <li>If the attention map is clearly looking at irrelevant areas, the answer is likely incorrect. (index 1, BestBERT is not looking at the people; index 4, BestBERT looks at car and not the parking lines)</li>
+            
+        </ol> 
+    Also note how the VQA is correct when the attentions are strongly on the correct regions and the error maps are weak or pointed away from the relevant areas. </b> </p>
+
+    <p> Note that all cases may not work as expected, but it mostly should. The GT answer comes from the publicly available VQA 2.0 dataset. 
+        We have also included our Justifying Module's failure prediction results on each case in the last column. A prediction of <i>True</i> means the VQA <i>will</i> fail. 
+    </p>
+<style>
+th {
+    text-align: center;
+    background: white;
+  position: sticky;
+  top: 0; /* Don't forget this, required for the stickiness */
+  box-shadow: 0 2px 2px -1px rgba(0, 0, 0, 0.4);
+}
+</style>
+
+
+<table class="table" width="100%" style="text-align: center;">
+<tr>
+<th>
+ Index 
+</th>
+<th>
+ Image 
+</th>
+<th>
+ Question 
+</th>
+<th>
+ Robot Answer 
+</th>
+<th>
+ GT Answer 
+</th>
+<th>
+ Error Map (ErrMap) (our)
+</th>
+<th>
+ Attention Map (J-Att) (our) 
+</th>
+<th>
+ Attention Map (BestBERT) (our) 
+</th>
+<th>
+ Attention Map (BaselineBERT)
+</th>
+<th>
+ Human Attention 
+</th>
+<th>
+ Failure Pred (our)
+</th>
+</tr>
+<tr>
+</td>
+<td>
+ 0 
+</td>
+<td>
+<img src="https://vqa_mscoco_images.s3.amazonaws.com/val2014/COCO_val2014_000000364743.jpg" width=200 height=200>
+</td>
+<td>
+ <span style="color:rgb(0,0,127);">is</span> <span style="color:rgb(182,0,0);">there</span> <span style="color:rgb(0,0,127);">a</span> <span style="color:rgb(0,0,127);">bridge</span> <span style="color:rgb(255,196,0);">in</span> <span style="color:rgb(0,0,127);">the</span> <span style="color:rgb(0,0,168);">background</span>  
+</td>
+<td>
+ yes 
+</td>
+<td>
+ yes 
+</td>
+<td>
+<img src="attention_images/364743_is_there_a_bridge_in_the_background_cam.png" width=200 height=200>
+</td>
+<td>
+<img src="attention_images/364743_is_there_a_bridge_in_the_background_refatt.png" width=200 height=200>
+</td>
+<td>
+<img src="attention_images/364743_is_there_a_bridge_in_the_background_bestbertatt.png" width=200 height=200>
+</td>
+<td>
+<img src="attention_images/364743_is_there_a_bridge_in_the_background_vqabaselineattim.png" width=200 height=200>
+</td>
+<td>
+<img src="attention_images/364743_is_there_a_bridge_in_the_background_human.png" width=200 height=200>
+</td>
+<td>
+ False 
+</tr>
+<tr>
+</td>
+<td>
+ 1 
+</td>
+<td>
+<img src="https://vqa_mscoco_images.s3.amazonaws.com/val2014/COCO_val2014_000000528714.jpg" width=200 height=200>
+</td>
+<td>
+ <span style="color:rgb(255,44,0);">are</span> <span style="color:rgb(154,0,0);">these</span> <span style="color:rgb(212,255,34);">people</span> <span style="color:rgb(0,0,127);">playing</span> <span style="color:rgb(0,0,127);">on</span> <span style="color:rgb(0,0,127);">the</span> <span style="color:rgb(0,72,255);">same</span> <span style="color:rgb(0,40,255);">team</span>  
+</td>
+<td>
+ no 
+</td>
+<td>
+ yes 
+</td>
+<td>
+<img src="attention_images/528714_are_these_people_playing_on_the_same_team_cam.png" width=200 height=200>
+</td>
+<td>
+<img src="attention_images/528714_are_these_people_playing_on_the_same_team_refatt.png" width=200 height=200>
+</td>
+<td>
+<img src="attention_images/528714_are_these_people_playing_on_the_same_team_bestbertatt.png" width=200 height=200>
+</td>
+<td>
+<img src="attention_images/528714_are_these_people_playing_on_the_same_team_vqabaselineattim.png" width=200 height=200>
+</td>
+<td>
+<img src="attention_images/528714_are_these_people_playing_on_the_same_team_human.png" width=200 height=200>
+</td>
+<td>
+ False 
+</tr>
+<tr>
+</td>
+<td>
+ 2 
+</td>
+<td>
+<img src="https://vqa_mscoco_images.s3.amazonaws.com/val2014/COCO_val2014_000000498368.jpg" width=200 height=200>
+</td>
+<td>
+ <span style="color:rgb(241,7,0);">what</span> <span style="color:rgb(0,0,127);">is</span> <span style="color:rgb(0,0,127);">the</span> <span style="color:rgb(0,0,127);">green</span> <span style="color:rgb(0,0,127);">vegetable</span>  
+</td>
+<td>
+ broccoli 
+</td>
+<td>
+ broccoli 
+</td>
+<td>
+<img src="attention_images/498368_what_is_the_green_vegetable_cam.png" width=200 height=200>
+</td>
+<td>
+<img src="attention_images/498368_what_is_the_green_vegetable_refatt.png" width=200 height=200>
+</td>
+<td>
+<img src="attention_images/498368_what_is_the_green_vegetable_bestbertatt.png" width=200 height=200>
+</td>
+<td>
+<img src="attention_images/498368_what_is_the_green_vegetable_vqabaselineattim.png" width=200 height=200>
+</td>
+<td>
+<img src="attention_images/498368_what_is_the_green_vegetable_human.png" width=200 height=200>
+</td>
+<td>
+ False 
+</tr>
+<tr>
+</td>
+<td>
+ 3 
+</td>
+<td>
+<img src="https://vqa_mscoco_images.s3.amazonaws.com/val2014/COCO_val2014_000000011320.jpg" width=200 height=200>
+</td>
+<td>
+ <span style="color:rgb(0,0,127);">was</span> <span style="color:rgb(255,148,0);">this</span> <span style="color:rgb(0,32,255);">photo</span> <span style="color:rgb(177,0,0);">taken</span> <span style="color:rgb(255,148,0);">this</span> <span style="color:rgb(0,0,127);">century</span>  
+</td>
+<td>
+ yes 
+</td>
+<td>
+ no 
+</td>
+<td>
+<img src="attention_images/11320_was_this_photo_taken_this_century_cam.png" width=200 height=200>
+</td>
+<td>
+<img src="attention_images/11320_was_this_photo_taken_this_century_refatt.png" width=200 height=200>
+</td>
+<td>
+<img src="attention_images/11320_was_this_photo_taken_this_century_bestbertatt.png" width=200 height=200>
+</td>
+<td>
+<img src="attention_images/11320_was_this_photo_taken_this_century_vqabaselineattim.png" width=200 height=200>
+</td>
+<td>
+<img src="attention_images/11320_was_this_photo_taken_this_century_human.png" width=200 height=200>
+</td>
+<td>
+ False 
+</tr>
+<tr>
+</td>
+<td>
+ 4 
+</td>
+<td>
+<img src="https://vqa_mscoco_images.s3.amazonaws.com/val2014/COCO_val2014_000000150686.jpg" width=200 height=200>
+</td>
+<td>
+ <span style="color:rgb(0,0,127);">is</span> <span style="color:rgb(204,0,0);">this</span> <span style="color:rgb(0,0,127);">a</span> <span style="color:rgb(0,0,127);">parking</span> <span style="color:rgb(166,255,79);">lot</span>  
+</td>
+<td>
+ no 
+</td>
+<td>
+ yes 
+</td>
+<td>
+<img src="attention_images/150686_is_this_a_parking_lot_cam.png" width=200 height=200>
+</td>
+<td>
+<img src="attention_images/150686_is_this_a_parking_lot_refatt.png" width=200 height=200>
+</td>
+<td>
+<img src="attention_images/150686_is_this_a_parking_lot_bestbertatt.png" width=200 height=200>
+</td>
+<td>
+<img src="attention_images/150686_is_this_a_parking_lot_vqabaselineattim.png" width=200 height=200>
+</td>
+<td>
+<img src="attention_images/150686_is_this_a_parking_lot_human.png" width=200 height=200>
+</td>
+<td>
+ False 
+</tr>
+<tr>
+</td>
+<td>
+ 5 
+</td>
+<td>
+<img src="https://vqa_mscoco_images.s3.amazonaws.com/val2014/COCO_val2014_000000409496.jpg" width=200 height=200>
+</td>
+<td>
+ <span style="color:rgb(0,0,127);">is</span> <span style="color:rgb(0,0,127);">the</span> <span style="color:rgb(0,0,127);">man</span> <span style="color:rgb(0,0,127);">wearing</span> <span style="color:rgb(0,0,127);">shorts</span>  
+</td>
+<td>
+ yes 
+</td>
+<td>
+ yes 
+</td>
+<td>
+<img src="attention_images/409496_is_the_man_wearing_shorts_cam.png" width=200 height=200>
+</td>
+<td>
+<img src="attention_images/409496_is_the_man_wearing_shorts_refatt.png" width=200 height=200>
+</td>
+<td>
+<img src="attention_images/409496_is_the_man_wearing_shorts_bestbertatt.png" width=200 height=200>
+</td>
+<td>
+<img src="attention_images/409496_is_the_man_wearing_shorts_vqabaselineattim.png" width=200 height=200>
+</td>
+<td>
+<img src="attention_images/409496_is_the_man_wearing_shorts_human.png" width=200 height=200>
+</td>
+<td>
+ False 
+</tr>
+<tr>
+</td>
+<td>
+ 6 
+</td>
+<td>
+<img src="https://vqa_mscoco_images.s3.amazonaws.com/val2014/COCO_val2014_000000528714.jpg" width=200 height=200>
+</td>
+<td>
+ <span style="color:rgb(141,0,0);">what</span> <span style="color:rgb(0,0,127);">color</span> <span style="color:rgb(0,0,127);">is</span> <span style="color:rgb(0,0,127);">the</span> <span style="color:rgb(0,0,127);">field</span>  
+</td>
+<td>
+ green 
+</td>
+<td>
+ green 
+</td>
+<td>
+<img src="attention_images/528714_what_color_is_the_field_cam.png" width=200 height=200>
+</td>
+<td>
+<img src="attention_images/528714_what_color_is_the_field_refatt.png" width=200 height=200>
+</td>
+<td>
+<img src="attention_images/528714_what_color_is_the_field_bestbertatt.png" width=200 height=200>
+</td>
+<td>
+<img src="attention_images/528714_what_color_is_the_field_vqabaselineattim.png" width=200 height=200>
+</td>
+<td>
+<img src="attention_images/528714_what_color_is_the_field_human.png" width=200 height=200>
+</td>
+<td>
+ True 
+</tr>
+<tr>
+</td>
+<td>
+ 7 
+</td>
+<td>
+<img src="https://vqa_mscoco_images.s3.amazonaws.com/val2014/COCO_val2014_000000285212.jpg" width=200 height=200>
+</td>
+<td>
+ <span style="color:rgb(0,0,127);">is</span> <span style="color:rgb(0,0,127);">the</span> <span style="color:rgb(0,0,127);">dog</span> <span style="color:rgb(255,77,0);">being</span> <span style="color:rgb(0,112,255);">aggressive</span>  
+</td>
+<td>
+ no 
+</td>
+<td>
+ no 
+</td>
+<td>
+<img src="attention_images/285212_is_the_dog_being_aggressive_cam.png" width=200 height=200>
+</td>
+<td>
+<img src="attention_images/285212_is_the_dog_being_aggressive_refatt.png" width=200 height=200>
+</td>
+<td>
+<img src="attention_images/285212_is_the_dog_being_aggressive_bestbertatt.png" width=200 height=200>
+</td>
+<td>
+<img src="attention_images/285212_is_the_dog_being_aggressive_vqabaselineattim.png" width=200 height=200>
+</td>
+<td>
+<img src="attention_images/285212_is_the_dog_being_aggressive_human.png" width=200 height=200>
+</td>
+<td>
+ False 
+</tr>
+<tr>
+</td>
+<td>
+ 8 
+</td>
+<td>
+<img src="https://vqa_mscoco_images.s3.amazonaws.com/val2014/COCO_val2014_000000512334.jpg" width=200 height=200>
+</td>
+<td>
+ <span style="color:rgb(191,0,0);">are</span> <span style="color:rgb(0,0,127);">the</span> <span style="color:rgb(0,0,127);">men</span> <span style="color:rgb(0,172,255);">in</span> <span style="color:rgb(0,0,127);">yellow</span> <span style="color:rgb(0,0,127);">vests</span> <span style="color:rgb(0,0,127);">loading</span> <span style="color:rgb(0,0,127);">luggage</span> <span style="color:rgb(0,0,127);">onto</span> <span style="color:rgb(0,0,127);">the</span> <span style="color:rgb(0,0,127);">plane</span>  
+</td>
+<td>
+ no 
+</td>
+<td>
+ no 
+</td>
+<td>
+<img src="attention_images/512334_are_the_men_in_yellow_vests_loading_luggage_onto_the_plane_cam.png" width=200 height=200>
+</td>
+<td>
+<img src="attention_images/512334_are_the_men_in_yellow_vests_loading_luggage_onto_the_plane_refatt.png" width=200 height=200>
+</td>
+<td>
+<img src="attention_images/512334_are_the_men_in_yellow_vests_loading_luggage_onto_the_plane_bestbertatt.png" width=200 height=200>
+</td>
+<td>
+<img src="attention_images/512334_are_the_men_in_yellow_vests_loading_luggage_onto_the_plane_vqabaselineattim.png" width=200 height=200>
+</td>
+<td>
+<img src="attention_images/512334_are_the_men_in_yellow_vests_loading_luggage_onto_the_plane_human.png" width=200 height=200>
+</td>
+<td>
+ False 
+</tr>
+<tr>
+</td>
+<td>
+ 9 
+</td>
+<td>
+<img src="https://vqa_mscoco_images.s3.amazonaws.com/val2014/COCO_val2014_000000033717.jpg" width=200 height=200>
+</td>
+<td>
+ <span style="color:rgb(255,70,0);">what</span> <span style="color:rgb(0,0,127);">is</span> <span style="color:rgb(0,0,127);">on</span> <span style="color:rgb(0,0,127);">top</span> <span style="color:rgb(0,0,127);">of</span> <span style="color:rgb(0,0,127);">the</span> <span style="color:rgb(0,0,127);">elephant</span>  
+</td>
+<td>
+ duck 
+</td>
+<td>
+ bird 
+</td>
+<td>
+<img src="attention_images/33717_what_is_on_top_of_the_elephant_cam.png" width=200 height=200>
+</td>
+<td>
+<img src="attention_images/33717_what_is_on_top_of_the_elephant_refatt.png" width=200 height=200>
+</td>
+<td>
+<img src="attention_images/33717_what_is_on_top_of_the_elephant_bestbertatt.png" width=200 height=200>
+</td>
+<td>
+<img src="attention_images/33717_what_is_on_top_of_the_elephant_vqabaselineattim.png" width=200 height=200>
+</td>
+<td>
+<img src="attention_images/33717_what_is_on_top_of_the_elephant_human.png" width=200 height=200>
+</td>
+<td>
+ False 
+</tr>
+<tr>
+</td>
+<td>
+ 10 
+</td>
+<td>
+<img src="https://vqa_mscoco_images.s3.amazonaws.com/val2014/COCO_val2014_000000546782.jpg" width=200 height=200>
+</td>
+<td>
+ <span style="color:rgb(172,0,0);">what</span> <span style="color:rgb(0,0,127);">object</span> <span style="color:rgb(0,0,127);">is</span> <span style="color:rgb(0,0,127);">below</span> <span style="color:rgb(0,0,127);">the</span> <span style="color:rgb(0,0,127);">street</span> <span style="color:rgb(0,0,127);">sign</span>  
+</td>
+<td>
+ bus 
+</td>
+<td>
+ mirror 
+</td>
+<td>
+<img src="attention_images/546782_what_object_is_below_the_street_sign_cam.png" width=200 height=200>
+</td>
+<td>
+<img src="attention_images/546782_what_object_is_below_the_street_sign_refatt.png" width=200 height=200>
+</td>
+<td>
+<img src="attention_images/546782_what_object_is_below_the_street_sign_bestbertatt.png" width=200 height=200>
+</td>
+<td>
+<img src="attention_images/546782_what_object_is_below_the_street_sign_vqabaselineattim.png" width=200 height=200>
+</td>
+<td>
+<img src="attention_images/546782_what_object_is_below_the_street_sign_human.png" width=200 height=200>
+</td>
+<td>
+ True 
+</tr>
+<tr>
+</td>
+<td>
+ 11 
+</td>
+<td>
+<img src="https://vqa_mscoco_images.s3.amazonaws.com/val2014/COCO_val2014_000000046736.jpg" width=200 height=200>
+</td>
+<td>
+ <span style="color:rgb(0,0,127);">is</span> <span style="color:rgb(0,0,127);">the</span> <span style="color:rgb(0,0,127);">water</span> <span style="color:rgb(200,0,0);">calm</span>  
+</td>
+<td>
+ no 
+</td>
+<td>
+ no 
+</td>
+<td>
+<img src="attention_images/46736_is_the_water_calm_cam.png" width=200 height=200>
+</td>
+<td>
+<img src="attention_images/46736_is_the_water_calm_refatt.png" width=200 height=200>
+</td>
+<td>
+<img src="attention_images/46736_is_the_water_calm_bestbertatt.png" width=200 height=200>
+</td>
+<td>
+<img src="attention_images/46736_is_the_water_calm_vqabaselineattim.png" width=200 height=200>
+</td>
+<td>
+<img src="attention_images/46736_is_the_water_calm_human.png" width=200 height=200>
+</td>
+<td>
+ False 
+</tr>
+<tr>
+</td>
+<td>
+ 12 
+</td>
+<td>
+<img src="https://vqa_mscoco_images.s3.amazonaws.com/val2014/COCO_val2014_000000564699.jpg" width=200 height=200>
+</td>
+<td>
+ <span style="color:rgb(15,248,231);">who</span> <span style="color:rgb(0,0,127);">uses</span> <span style="color:rgb(132,0,0);">this</span> <span style="color:rgb(0,0,127);">bathroom</span>  
+</td>
+<td>
+ people 
+</td>
+<td>
+ patient 
+</td>
+<td>
+<img src="attention_images/564699_who_uses_this_bathroom_cam.png" width=200 height=200>
+</td>
+<td>
+<img src="attention_images/564699_who_uses_this_bathroom_refatt.png" width=200 height=200>
+</td>
+<td>
+<img src="attention_images/564699_who_uses_this_bathroom_bestbertatt.png" width=200 height=200>
+</td>
+<td>
+<img src="attention_images/564699_who_uses_this_bathroom_vqabaselineattim.png" width=200 height=200>
+</td>
+<td>
+<img src="attention_images/564699_who_uses_this_bathroom_human.png" width=200 height=200>
+</td>
+<td>
+ True 
+</tr>
+<tr>
+</td>
+<td>
+ 13 
+</td>
+<td>
+<img src="https://vqa_mscoco_images.s3.amazonaws.com/val2014/COCO_val2014_000000395723.jpg" width=200 height=200>
+</td>
+<td>
+ <span style="color:rgb(0,176,255);">what</span> <span style="color:rgb(0,0,127);">color</span> <span style="color:rgb(132,0,0);">are</span> <span style="color:rgb(0,0,127);">the</span> <span style="color:rgb(255,192,0);">animals</span> <span style="color:rgb(92,255,154);">in</span> <span style="color:rgb(0,0,127);">the</span> <span style="color:rgb(0,120,255);">photo</span>  
+</td>
+<td>
+ black and white 
+</td>
+<td>
+ black white 
+</td>
+<td>
+<img src="attention_images/395723_what_color_are_the_animals_in_the_photo_cam.png" width=200 height=200>
+</td>
+<td>
+<img src="attention_images/395723_what_color_are_the_animals_in_the_photo_refatt.png" width=200 height=200>
+</td>
+<td>
+<img src="attention_images/395723_what_color_are_the_animals_in_the_photo_bestbertatt.png" width=200 height=200>
+</td>
+<td>
+<img src="attention_images/395723_what_color_are_the_animals_in_the_photo_vqabaselineattim.png" width=200 height=200>
+</td>
+<td>
+<img src="attention_images/395723_what_color_are_the_animals_in_the_photo_human.png" width=200 height=200>
+</td>
+<td>
+ True 
+</tr>
+<tr>
+</td>
+<td>
+ 14 
+</td>
+<td>
+<img src="https://vqa_mscoco_images.s3.amazonaws.com/val2014/COCO_val2014_000000081251.jpg" width=200 height=200>
+</td>
+<td>
+ <span style="color:rgb(172,0,0);">are</span> <span style="color:rgb(137,255,108);">there</span> <span style="color:rgb(0,0,127);">tomatoes</span> <span style="color:rgb(0,0,127);">on</span> <span style="color:rgb(0,0,127);">the</span> <span style="color:rgb(0,0,127);">pizza</span>  
+</td>
+<td>
+ yes 
+</td>
+<td>
+ yes 
+</td>
+<td>
+<img src="attention_images/81251_are_there_tomatoes_on_the_pizza_cam.png" width=200 height=200>
+</td>
+<td>
+<img src="attention_images/81251_are_there_tomatoes_on_the_pizza_refatt.png" width=200 height=200>
+</td>
+<td>
+<img src="attention_images/81251_are_there_tomatoes_on_the_pizza_bestbertatt.png" width=200 height=200>
+</td>
+<td>
+<img src="attention_images/81251_are_there_tomatoes_on_the_pizza_vqabaselineattim.png" width=200 height=200>
+</td>
+<td>
+<img src="attention_images/81251_are_there_tomatoes_on_the_pizza_human.png" width=200 height=200>
+</td>
+<td>
+ False 
+</tr>
+<tr>
+</td>
+<td>
+ 15 
+</td>
+<td>
+<img src="https://vqa_mscoco_images.s3.amazonaws.com/val2014/COCO_val2014_000000202343.jpg" width=200 height=200>
+</td>
+<td>
+ <span style="color:rgb(0,0,127);">is</span> <span style="color:rgb(182,0,0);">this</span> <span style="color:rgb(0,0,250);">mobile</span> <span style="color:rgb(0,0,127);">ready</span> <span style="color:rgb(0,40,255);">for</span> <span style="color:rgb(0,0,127);">use</span>  
+</td>
+<td>
+ yes 
+</td>
+<td>
+ no 
+</td>
+<td>
+<img src="attention_images/202343_is_this_mobile_ready_for_use_cam.png" width=200 height=200>
+</td>
+<td>
+<img src="attention_images/202343_is_this_mobile_ready_for_use_refatt.png" width=200 height=200>
+</td>
+<td>
+<img src="attention_images/202343_is_this_mobile_ready_for_use_bestbertatt.png" width=200 height=200>
+</td>
+<td>
+<img src="attention_images/202343_is_this_mobile_ready_for_use_vqabaselineattim.png" width=200 height=200>
+</td>
+<td>
+<img src="attention_images/202343_is_this_mobile_ready_for_use_human.png" width=200 height=200>
+</td>
+<td>
+ False 
+</tr>
+<tr>
+</td>
+<td>
+ 16 
+</td>
+<td>
+<img src="https://vqa_mscoco_images.s3.amazonaws.com/val2014/COCO_val2014_000000249325.jpg" width=200 height=200>
+</td>
+<td>
+ <span style="color:rgb(255,229,0);">what</span> <span style="color:rgb(0,0,127);">color</span> <span style="color:rgb(0,0,127);">is</span> <span style="color:rgb(0,0,127);">the</span> <span style="color:rgb(159,0,0);">photo</span>  
+</td>
+<td>
+ black and white 
+</td>
+<td>
+ black and white 
+</td>
+<td>
+<img src="attention_images/249325_what_color_is_the_photo_cam.png" width=200 height=200>
+</td>
+<td>
+<img src="attention_images/249325_what_color_is_the_photo_refatt.png" width=200 height=200>
+</td>
+<td>
+<img src="attention_images/249325_what_color_is_the_photo_bestbertatt.png" width=200 height=200>
+</td>
+<td>
+<img src="attention_images/249325_what_color_is_the_photo_vqabaselineattim.png" width=200 height=200>
+</td>
+<td>
+<img src="attention_images/249325_what_color_is_the_photo_human.png" width=200 height=200>
+</td>
+<td>
+ True 
+</tr>
+<tr>
+</td>
+<td>
+ 17 
+</td>
+<td>
+<img src="https://vqa_mscoco_images.s3.amazonaws.com/val2014/COCO_val2014_000000450674.jpg" width=200 height=200>
+</td>
+<td>
+ <span style="color:rgb(209,0,0);">are</span> <span style="color:rgb(163,255,83);">there</span> <span style="color:rgb(0,0,127);">riders</span> <span style="color:rgb(0,0,127);">on</span> <span style="color:rgb(0,0,127);">each</span> <span style="color:rgb(0,0,127);">bike</span>  
+</td>
+<td>
+ yes 
+</td>
+<td>
+ yes 
+</td>
+<td>
+<img src="attention_images/450674_are_there_riders_on_each_bike_cam.png" width=200 height=200>
+</td>
+<td>
+<img src="attention_images/450674_are_there_riders_on_each_bike_refatt.png" width=200 height=200>
+</td>
+<td>
+<img src="attention_images/450674_are_there_riders_on_each_bike_bestbertatt.png" width=200 height=200>
+</td>
+<td>
+<img src="attention_images/450674_are_there_riders_on_each_bike_vqabaselineattim.png" width=200 height=200>
+</td>
+<td>
+<img src="attention_images/450674_are_there_riders_on_each_bike_human.png" width=200 height=200>
+</td>
+<td>
+ False 
+</tr>
+<tr>
+</td>
+<td>
+ 18 
+</td>
+<td>
+<img src="https://vqa_mscoco_images.s3.amazonaws.com/val2014/COCO_val2014_000000120420.jpg" width=200 height=200>
+</td>
+<td>
+ <span style="color:rgb(0,132,255);">what</span> <span style="color:rgb(0,0,127);">is</span> <span style="color:rgb(0,0,127);">the</span> <span style="color:rgb(141,0,0);">many</span> <span style="color:rgb(0,0,127);">using</span> <span style="color:rgb(128,255,118);">to</span> <span style="color:rgb(212,255,34);">take</span> <span style="color:rgb(0,0,127);">a</span> <span style="color:rgb(0,76,255);">picture</span>  
+</td>
+<td>
+ camera 
+</td>
+<td>
+ phone 
+</td>
+<td>
+<img src="attention_images/120420_what_is_the_many_using_to_take_a_picture_cam.png" width=200 height=200>
+</td>
+<td>
+<img src="attention_images/120420_what_is_the_many_using_to_take_a_picture_refatt.png" width=200 height=200>
+</td>
+<td>
+<img src="attention_images/120420_what_is_the_many_using_to_take_a_picture_bestbertatt.png" width=200 height=200>
+</td>
+<td>
+<img src="attention_images/120420_what_is_the_many_using_to_take_a_picture_vqabaselineattim.png" width=200 height=200>
+</td>
+<td>
+<img src="attention_images/120420_what_is_the_many_using_to_take_a_picture_human.png" width=200 height=200>
+</td>
+<td>
+ False 
+</tr>
+<tr>
+</td>
+<td>
+ 19 
+</td>
+<td>
+<img src="https://vqa_mscoco_images.s3.amazonaws.com/val2014/COCO_val2014_000000380834.jpg" width=200 height=200>
+</td>
+<td>
+ <span style="color:rgb(168,0,0);">are</span> <span style="color:rgb(255,170,0);">they</span> <span style="color:rgb(50,255,195);">going</span> <span style="color:rgb(0,0,127);">forward</span> <span style="color:rgb(0,0,127);">of</span> <span style="color:rgb(0,0,127);">backward</span>  
+</td>
+<td>
+ yes 
+</td>
+<td>
+ forward 
+</td>
+<td>
+<img src="attention_images/380834_are_they_going_forward_of_backward_cam.png" width=200 height=200>
+</td>
+<td>
+<img src="attention_images/380834_are_they_going_forward_of_backward_refatt.png" width=200 height=200>
+</td>
+<td>
+<img src="attention_images/380834_are_they_going_forward_of_backward_bestbertatt.png" width=200 height=200>
+</td>
+<td>
+<img src="attention_images/380834_are_they_going_forward_of_backward_vqabaselineattim.png" width=200 height=200>
+</td>
+<td>
+<img src="attention_images/380834_are_they_going_forward_of_backward_human.png" width=200 height=200>
+</td>
+<td>
+ False 
+</tr>
+<tr>
+</td>
+<td>
+ 20 
+</td>
+<td>
+<img src="https://vqa_mscoco_images.s3.amazonaws.com/val2014/COCO_val2014_000000101535.jpg" width=200 height=200>
+</td>
+<td>
+ <span style="color:rgb(150,0,0);">what</span> <span style="color:rgb(0,0,127);">color</span> <span style="color:rgb(0,0,127);">is</span> <span style="color:rgb(0,0,127);">the</span> <span style="color:rgb(0,0,127);">countertop</span>  
+</td>
+<td>
+ white 
+</td>
+<td>
+ white 
+</td>
+<td>
+<img src="attention_images/101535_what_color_is_the_countertop_cam.png" width=200 height=200>
+</td>
+<td>
+<img src="attention_images/101535_what_color_is_the_countertop_refatt.png" width=200 height=200>
+</td>
+<td>
+<img src="attention_images/101535_what_color_is_the_countertop_bestbertatt.png" width=200 height=200>
+</td>
+<td>
+<img src="attention_images/101535_what_color_is_the_countertop_vqabaselineattim.png" width=200 height=200>
+</td>
+<td>
+<img src="attention_images/101535_what_color_is_the_countertop_human.png" width=200 height=200>
+</td>
+<td>
+ True 
+</tr>
+<tr>
+</td>
+<td>
+ 21 
+</td>
+<td>
+<img src="https://vqa_mscoco_images.s3.amazonaws.com/val2014/COCO_val2014_000000468245.jpg" width=200 height=200>
+</td>
+<td>
+ <span style="color:rgb(177,0,0);">what</span> <span style="color:rgb(0,0,127);">is</span> <span style="color:rgb(0,0,127);">covering</span> <span style="color:rgb(0,0,127);">the</span> <span style="color:rgb(0,0,168);">windows</span>  
+</td>
+<td>
+ blinds 
+</td>
+<td>
+ blinds 
+</td>
+<td>
+<img src="attention_images/468245_what_is_covering_the_windows_cam.png" width=200 height=200>
+</td>
+<td>
+<img src="attention_images/468245_what_is_covering_the_windows_refatt.png" width=200 height=200>
+</td>
+<td>
+<img src="attention_images/468245_what_is_covering_the_windows_bestbertatt.png" width=200 height=200>
+</td>
+<td>
+<img src="attention_images/468245_what_is_covering_the_windows_vqabaselineattim.png" width=200 height=200>
+</td>
+<td>
+<img src="attention_images/468245_what_is_covering_the_windows_human.png" width=200 height=200>
+</td>
+<td>
+ False 
+</tr>
+<tr>
+</td>
+<td>
+ 22 
+</td>
+<td>
+<img src="https://vqa_mscoco_images.s3.amazonaws.com/val2014/COCO_val2014_000000382125.jpg" width=200 height=200>
+</td>
+<td>
+ <span style="color:rgb(255,77,0);">are</span> <span style="color:rgb(195,255,50);">they</span> <span style="color:rgb(0,0,127);">at</span> <span style="color:rgb(0,0,209);">home</span>  
+</td>
+<td>
+ no 
+</td>
+<td>
+ no 
+</td>
+<td>
+<img src="attention_images/382125_are_they_at_home_cam.png" width=200 height=200>
+</td>
+<td>
+<img src="attention_images/382125_are_they_at_home_refatt.png" width=200 height=200>
+</td>
+<td>
+<img src="attention_images/382125_are_they_at_home_bestbertatt.png" width=200 height=200>
+</td>
+<td>
+<img src="attention_images/382125_are_they_at_home_vqabaselineattim.png" width=200 height=200>
+</td>
+<td>
+<img src="attention_images/382125_are_they_at_home_human.png" width=200 height=200>
+</td>
+<td>
+ False 
+</tr>
+<tr>
+</td>
+<td>
+ 23 
+</td>
+<td>
+<img src="https://vqa_mscoco_images.s3.amazonaws.com/val2014/COCO_val2014_000000376236.jpg" width=200 height=200>
+</td>
+<td>
+ <span style="color:rgb(0,0,127);">is</span> <span style="color:rgb(0,0,127);">the</span> <span style="color:rgb(0,0,127);">giraffe</span> <span style="color:rgb(255,33,0);">being</span> <span style="color:rgb(0,0,127);">gentle</span>  
+</td>
+<td>
+ yes 
+</td>
+<td>
+ yes 
+</td>
+<td>
+<img src="attention_images/376236_is_the_giraffe_being_gentle_cam.png" width=200 height=200>
+</td>
+<td>
+<img src="attention_images/376236_is_the_giraffe_being_gentle_refatt.png" width=200 height=200>
+</td>
+<td>
+<img src="attention_images/376236_is_the_giraffe_being_gentle_bestbertatt.png" width=200 height=200>
+</td>
+<td>
+<img src="attention_images/376236_is_the_giraffe_being_gentle_vqabaselineattim.png" width=200 height=200>
+</td>
+<td>
+<img src="attention_images/376236_is_the_giraffe_being_gentle_human.png" width=200 height=200>
+</td>
+<td>
+ False 
+</tr>
+<tr>
+</td>
+<td>
+ 24 
+</td>
+<td>
+<img src="https://vqa_mscoco_images.s3.amazonaws.com/val2014/COCO_val2014_000000266889.jpg" width=200 height=200>
+</td>
+<td>
+ <span style="color:rgb(0,0,127);">is</span> <span style="color:rgb(218,0,0);">this</span> <span style="color:rgb(0,0,127);">a</span> <span style="color:rgb(0,0,127);">practice</span> <span style="color:rgb(0,0,127);">match</span>  
+</td>
+<td>
+ yes 
+</td>
+<td>
+ yes 
+</td>
+<td>
+<img src="attention_images/266889_is_this_a_practice_match_cam.png" width=200 height=200>
+</td>
+<td>
+<img src="attention_images/266889_is_this_a_practice_match_refatt.png" width=200 height=200>
+</td>
+<td>
+<img src="attention_images/266889_is_this_a_practice_match_bestbertatt.png" width=200 height=200>
+</td>
+<td>
+<img src="attention_images/266889_is_this_a_practice_match_vqabaselineattim.png" width=200 height=200>
+</td>
+<td>
+<img src="attention_images/266889_is_this_a_practice_match_human.png" width=200 height=200>
+</td>
+<td>
+ False 
+</tr>
+<tr>
+</td>
+<td>
+ 25 
+</td>
+<td>
+<img src="https://vqa_mscoco_images.s3.amazonaws.com/val2014/COCO_val2014_000000324872.jpg" width=200 height=200>
+</td>
+<td>
+ <span style="color:rgb(0,0,127);">is</span> <span style="color:rgb(0,0,127);">the</span> <span style="color:rgb(0,0,127);">man</span> <span style="color:rgb(121,255,125);">going</span> <span style="color:rgb(200,0,0);">to</span> <span style="color:rgb(0,0,127);">jump</span> <span style="color:rgb(0,172,255);">over</span> <span style="color:rgb(0,0,127);">the</span> <span style="color:rgb(0,168,255);">train</span>  
+</td>
+<td>
+ no 
+</td>
+<td>
+ no 
+</td>
+<td>
+<img src="attention_images/324872_is_the_man_going_to_jump_over_the_train_cam.png" width=200 height=200>
+</td>
+<td>
+<img src="attention_images/324872_is_the_man_going_to_jump_over_the_train_refatt.png" width=200 height=200>
+</td>
+<td>
+<img src="attention_images/324872_is_the_man_going_to_jump_over_the_train_bestbertatt.png" width=200 height=200>
+</td>
+<td>
+<img src="attention_images/324872_is_the_man_going_to_jump_over_the_train_vqabaselineattim.png" width=200 height=200>
+</td>
+<td>
+<img src="attention_images/324872_is_the_man_going_to_jump_over_the_train_human.png" width=200 height=200>
+</td>
+<td>
+ False 
+</tr>
+<tr>
+</td>
+<td>
+ 26 
+</td>
+<td>
+<img src="https://vqa_mscoco_images.s3.amazonaws.com/val2014/COCO_val2014_000000285212.jpg" width=200 height=200>
+</td>
+<td>
+ <span style="color:rgb(0,0,127);">is</span> <span style="color:rgb(0,0,127);">the</span> <span style="color:rgb(0,0,127);">dog</span> <span style="color:rgb(255,77,0);">being</span> <span style="color:rgb(0,112,255);">aggressive</span>  
+</td>
+<td>
+ no 
+</td>
+<td>
+ no 
+</td>
+<td>
+<img src="attention_images/285212_is_the_dog_being_aggressive_cam.png" width=200 height=200>
+</td>
+<td>
+<img src="attention_images/285212_is_the_dog_being_aggressive_refatt.png" width=200 height=200>
+</td>
+<td>
+<img src="attention_images/285212_is_the_dog_being_aggressive_bestbertatt.png" width=200 height=200>
+</td>
+<td>
+<img src="attention_images/285212_is_the_dog_being_aggressive_vqabaselineattim.png" width=200 height=200>
+</td>
+<td>
+<img src="attention_images/285212_is_the_dog_being_aggressive_human.png" width=200 height=200>
+</td>
+<td>
+ False 
+</tr>
+<tr>
+</td>
+<td>
+ 27 
+</td>
+<td>
+<img src="https://vqa_mscoco_images.s3.amazonaws.com/val2014/COCO_val2014_000000481159.jpg" width=200 height=200>
+</td>
+<td>
+ <span style="color:rgb(0,0,127);">is</span> <span style="color:rgb(191,0,0);">this</span> <span style="color:rgb(0,0,127);">a</span> <span style="color:rgb(0,0,127);">selkirk</span> <span style="color:rgb(0,0,245);">rex</span>  
+</td>
+<td>
+ no 
+</td>
+<td>
+ no 
+</td>
+<td>
+<img src="attention_images/481159_is_this_a_selkirk_rex_cam.png" width=200 height=200>
+</td>
+<td>
+<img src="attention_images/481159_is_this_a_selkirk_rex_refatt.png" width=200 height=200>
+</td>
+<td>
+<img src="attention_images/481159_is_this_a_selkirk_rex_bestbertatt.png" width=200 height=200>
+</td>
+<td>
+<img src="attention_images/481159_is_this_a_selkirk_rex_vqabaselineattim.png" width=200 height=200>
+</td>
+<td>
+<img src="attention_images/481159_is_this_a_selkirk_rex_human.png" width=200 height=200>
+</td>
+<td>
+ False 
+</tr>
+<tr>
+</td>
+<td>
+ 28 
+</td>
+<td>
+<img src="https://vqa_mscoco_images.s3.amazonaws.com/val2014/COCO_val2014_000000376236.jpg" width=200 height=200>
+</td>
+<td>
+ <span style="color:rgb(0,0,127);">does</span> <span style="color:rgb(0,0,127);">the</span> <span style="color:rgb(0,0,127);">boy</span> <span style="color:rgb(0,0,127);">double</span> <span style="color:rgb(0,0,127);">layer</span> <span style="color:rgb(0,0,127);">clothing</span>  
+</td>
+<td>
+ yes 
+</td>
+<td>
+ yes 
+</td>
+<td>
+<img src="attention_images/376236_does_the_boy_double_layer_clothing_cam.png" width=200 height=200>
+</td>
+<td>
+<img src="attention_images/376236_does_the_boy_double_layer_clothing_refatt.png" width=200 height=200>
+</td>
+<td>
+<img src="attention_images/376236_does_the_boy_double_layer_clothing_bestbertatt.png" width=200 height=200>
+</td>
+<td>
+<img src="attention_images/376236_does_the_boy_double_layer_clothing_vqabaselineattim.png" width=200 height=200>
+</td>
+<td>
+<img src="attention_images/376236_does_the_boy_double_layer_clothing_human.png" width=200 height=200>
+</td>
+<td>
+ False 
+</tr>
+<tr>
+</td>
+<td>
+ 29 
+</td>
+<td>
+<img src="https://vqa_mscoco_images.s3.amazonaws.com/val2014/COCO_val2014_000000150007.jpg" width=200 height=200>
+</td>
+<td>
+ <span style="color:rgb(131,255,115);">what</span> <span style="color:rgb(0,0,127);">is</span> <span style="color:rgb(0,0,127);">the</span> <span style="color:rgb(0,0,127);">plane</span> <span style="color:rgb(255,159,0);">preparing</span> <span style="color:rgb(159,0,0);">to</span> <span style="color:rgb(132,0,0);">do</span>  
+</td>
+<td>
+ fly 
+</td>
+<td>
+ land 
+</td>
+<td>
+<img src="attention_images/150007_what_is_the_plane_preparing_to_do_cam.png" width=200 height=200>
+</td>
+<td>
+<img src="attention_images/150007_what_is_the_plane_preparing_to_do_refatt.png" width=200 height=200>
+</td>
+<td>
+<img src="attention_images/150007_what_is_the_plane_preparing_to_do_bestbertatt.png" width=200 height=200>
+</td>
+<td>
+<img src="attention_images/150007_what_is_the_plane_preparing_to_do_vqabaselineattim.png" width=200 height=200>
+</td>
+<td>
+<img src="attention_images/150007_what_is_the_plane_preparing_to_do_human.png" width=200 height=200>
+</td>
+<td>
+ True 
+</tr>
+<tr>
+</td>
+<td>
+ 30 
+</td>
+<td>
+<img src="https://vqa_mscoco_images.s3.amazonaws.com/val2014/COCO_val2014_000000061418.jpg" width=200 height=200>
+</td>
+<td>
+ <span style="color:rgb(0,0,127);">is</span> <span style="color:rgb(89,255,157);">this</span> <span style="color:rgb(0,0,127);">a</span> <span style="color:rgb(195,0,0);">recent</span> <span style="color:rgb(0,0,127);">photo</span>  
+</td>
+<td>
+ no 
+</td>
+<td>
+ no 
+</td>
+<td>
+<img src="attention_images/61418_is_this_a_recent_photo_cam.png" width=200 height=200>
+</td>
+<td>
+<img src="attention_images/61418_is_this_a_recent_photo_refatt.png" width=200 height=200>
+</td>
+<td>
+<img src="attention_images/61418_is_this_a_recent_photo_bestbertatt.png" width=200 height=200>
+</td>
+<td>
+<img src="attention_images/61418_is_this_a_recent_photo_vqabaselineattim.png" width=200 height=200>
+</td>
+<td>
+<img src="attention_images/61418_is_this_a_recent_photo_human.png" width=200 height=200>
+</td>
+<td>
+ False 
+</tr>
+<tr>
+</td>
+<td>
+ 31 
+</td>
+<td>
+<img src="https://vqa_mscoco_images.s3.amazonaws.com/val2014/COCO_val2014_000000214692.jpg" width=200 height=200>
+</td>
+<td>
+ <span style="color:rgb(112,255,134);">what</span> <span style="color:rgb(159,0,0);">are</span> <span style="color:rgb(255,140,0);">they</span> <span style="color:rgb(0,0,127);">playing</span>  
+</td>
+<td>
+ baseball 
+</td>
+<td>
+ baseball 
+</td>
+<td>
+<img src="attention_images/214692_what_are_they_playing_cam.png" width=200 height=200>
+</td>
+<td>
+<img src="attention_images/214692_what_are_they_playing_refatt.png" width=200 height=200>
+</td>
+<td>
+<img src="attention_images/214692_what_are_they_playing_bestbertatt.png" width=200 height=200>
+</td>
+<td>
+<img src="attention_images/214692_what_are_they_playing_vqabaselineattim.png" width=200 height=200>
+</td>
+<td>
+<img src="attention_images/214692_what_are_they_playing_human.png" width=200 height=200>
+</td>
+<td>
+ False 
+</tr>
+<tr>
+</td>
+<td>
+ 32 
+</td>
+<td>
+<img src="https://vqa_mscoco_images.s3.amazonaws.com/val2014/COCO_val2014_000000146757.jpg" width=200 height=200>
+</td>
+<td>
+ <span style="color:rgb(0,0,127);">is</span> <span style="color:rgb(177,0,0);">there</span> <span style="color:rgb(0,0,127);">a</span> <span style="color:rgb(0,0,127);">bowl</span> <span style="color:rgb(28,255,218);">seen</span>  
+</td>
+<td>
+ no 
+</td>
+<td>
+ yes 
+</td>
+<td>
+<img src="attention_images/146757_is_there_a_bowl_seen_cam.png" width=200 height=200>
+</td>
+<td>
+<img src="attention_images/146757_is_there_a_bowl_seen_refatt.png" width=200 height=200>
+</td>
+<td>
+<img src="attention_images/146757_is_there_a_bowl_seen_bestbertatt.png" width=200 height=200>
+</td>
+<td>
+<img src="attention_images/146757_is_there_a_bowl_seen_vqabaselineattim.png" width=200 height=200>
+</td>
+<td>
+<img src="attention_images/146757_is_there_a_bowl_seen_human.png" width=200 height=200>
+</td>
+<td>
+ False 
+</tr>
+<tr>
+</td>
+<td>
+ 33 
+</td>
+<td>
+<img src="https://vqa_mscoco_images.s3.amazonaws.com/val2014/COCO_val2014_000000167952.jpg" width=200 height=200>
+</td>
+<td>
+ <span style="color:rgb(145,0,0);">what</span> <span style="color:rgb(0,0,127);">color</span> <span style="color:rgb(0,0,127);">is</span> <span style="color:rgb(0,0,127);">the</span> <span style="color:rgb(0,0,127);">table</span>  
+</td>
+<td>
+ brown 
+</td>
+<td>
+ white 
+</td>
+<td>
+<img src="attention_images/167952_what_color_is_the_table_cam.png" width=200 height=200>
+</td>
+<td>
+<img src="attention_images/167952_what_color_is_the_table_refatt.png" width=200 height=200>
+</td>
+<td>
+<img src="attention_images/167952_what_color_is_the_table_bestbertatt.png" width=200 height=200>
+</td>
+<td>
+<img src="attention_images/167952_what_color_is_the_table_vqabaselineattim.png" width=200 height=200>
+</td>
+<td>
+<img src="attention_images/167952_what_color_is_the_table_human.png" width=200 height=200>
+</td>
+<td>
+ True 
+</tr>
+<tr>
+</td>
+<td>
+ 34 
+</td>
+<td>
+<img src="https://vqa_mscoco_images.s3.amazonaws.com/val2014/COCO_val2014_000000564283.jpg" width=200 height=200>
+</td>
+<td>
+ <span style="color:rgb(0,0,127);">is</span> <span style="color:rgb(236,3,0);">there</span> <span style="color:rgb(0,0,127);">a</span> <span style="color:rgb(0,60,255);">toaster</span> <span style="color:rgb(0,0,127);">on</span> <span style="color:rgb(0,0,127);">the</span> <span style="color:rgb(0,0,127);">counter</span>  
+</td>
+<td>
+ yes 
+</td>
+<td>
+ yes 
+</td>
+<td>
+<img src="attention_images/564283_is_there_a_toaster_on_the_counter_cam.png" width=200 height=200>
+</td>
+<td>
+<img src="attention_images/564283_is_there_a_toaster_on_the_counter_refatt.png" width=200 height=200>
+</td>
+<td>
+<img src="attention_images/564283_is_there_a_toaster_on_the_counter_bestbertatt.png" width=200 height=200>
+</td>
+<td>
+<img src="attention_images/564283_is_there_a_toaster_on_the_counter_vqabaselineattim.png" width=200 height=200>
+</td>
+<td>
+<img src="attention_images/564283_is_there_a_toaster_on_the_counter_human.png" width=200 height=200>
+</td>
+<td>
+ False 
+</tr>
+<tr>
+</td>
+<td>
+ 35 
+</td>
+<td>
+<img src="https://vqa_mscoco_images.s3.amazonaws.com/val2014/COCO_val2014_000000531144.jpg" width=200 height=200>
+</td>
+<td>
+ <span style="color:rgb(255,203,0);">how</span> <span style="color:rgb(159,0,0);">many</span> <span style="color:rgb(0,104,255);">girls</span> <span style="color:rgb(255,100,0);">are</span> <span style="color:rgb(12,244,234);">in</span> <span style="color:rgb(124,255,121);">this</span> <span style="color:rgb(0,0,127);">picture</span>  
+</td>
+<td>
+ 2 
+</td>
+<td>
+ 2 
+</td>
+<td>
+<img src="attention_images/531144_how_many_girls_are_in_this_picture_cam.png" width=200 height=200>
+</td>
+<td>
+<img src="attention_images/531144_how_many_girls_are_in_this_picture_refatt.png" width=200 height=200>
+</td>
+<td>
+<img src="attention_images/531144_how_many_girls_are_in_this_picture_bestbertatt.png" width=200 height=200>
+</td>
+<td>
+<img src="attention_images/531144_how_many_girls_are_in_this_picture_vqabaselineattim.png" width=200 height=200>
+</td>
+<td>
+<img src="attention_images/531144_how_many_girls_are_in_this_picture_human.png" width=200 height=200>
+</td>
+<td>
+ False 
+</tr>
+<tr>
+</td>
+<td>
+ 36 
+</td>
+<td>
+<img src="https://vqa_mscoco_images.s3.amazonaws.com/val2014/COCO_val2014_000000339202.jpg" width=200 height=200>
+</td>
+<td>
+ <span style="color:rgb(147,255,99);">why</span> <span style="color:rgb(0,0,127);">is</span> <span style="color:rgb(0,0,141);">part</span> <span style="color:rgb(0,0,127);">of</span> <span style="color:rgb(0,0,127);">the</span> <span style="color:rgb(150,0,0);">photo</span> <span style="color:rgb(0,0,127);">blurry</span>  
+</td>
+<td>
+ no 
+</td>
+<td>
+ movement 
+</td>
+<td>
+<img src="attention_images/339202_why_is_part_of_the_photo_blurry_cam.png" width=200 height=200>
+</td>
+<td>
+<img src="attention_images/339202_why_is_part_of_the_photo_blurry_refatt.png" width=200 height=200>
+</td>
+<td>
+<img src="attention_images/339202_why_is_part_of_the_photo_blurry_bestbertatt.png" width=200 height=200>
+</td>
+<td>
+<img src="attention_images/339202_why_is_part_of_the_photo_blurry_vqabaselineattim.png" width=200 height=200>
+</td>
+<td>
+<img src="attention_images/339202_why_is_part_of_the_photo_blurry_human.png" width=200 height=200>
+</td>
+<td>
+ True 
+</tr>
+<tr>
+</td>
+<td>
+ 37 
+</td>
+<td>
+<img src="https://vqa_mscoco_images.s3.amazonaws.com/val2014/COCO_val2014_000000285733.jpg" width=200 height=200>
+</td>
+<td>
+ <span style="color:rgb(0,0,127);">does</span> <span style="color:rgb(177,0,0);">this</span> <span style="color:rgb(255,189,0);">belong</span> <span style="color:rgb(150,0,0);">to</span> <span style="color:rgb(0,0,127);">a</span> <span style="color:rgb(0,0,127);">man</span> <span style="color:rgb(0,0,127);">or</span> <span style="color:rgb(0,0,127);">woman</span>  
+</td>
+<td>
+ woman 
+</td>
+<td>
+ woman 
+</td>
+<td>
+<img src="attention_images/285733_does_this_belong_to_a_man_or_woman_cam.png" width=200 height=200>
+</td>
+<td>
+<img src="attention_images/285733_does_this_belong_to_a_man_or_woman_refatt.png" width=200 height=200>
+</td>
+<td>
+<img src="attention_images/285733_does_this_belong_to_a_man_or_woman_bestbertatt.png" width=200 height=200>
+</td>
+<td>
+<img src="attention_images/285733_does_this_belong_to_a_man_or_woman_vqabaselineattim.png" width=200 height=200>
+</td>
+<td>
+<img src="attention_images/285733_does_this_belong_to_a_man_or_woman_human.png" width=200 height=200>
+</td>
+<td>
+ False 
+</tr>
+<tr>
+</td>
+<td>
+ 38 
+</td>
+<td>
+<img src="https://vqa_mscoco_images.s3.amazonaws.com/val2014/COCO_val2014_000000131856.jpg" width=200 height=200>
+</td>
+<td>
+ <span style="color:rgb(28,255,218);">what</span> <span style="color:rgb(0,0,127);">is</span> <span style="color:rgb(0,0,127);">floating</span> <span style="color:rgb(222,0,0);">in</span> <span style="color:rgb(0,0,127);">the</span> <span style="color:rgb(0,0,127);">sky</span>  
+</td>
+<td>
+ kite 
+</td>
+<td>
+ kites 
+</td>
+<td>
+<img src="attention_images/131856_what_is_floating_in_the_sky_cam.png" width=200 height=200>
+</td>
+<td>
+<img src="attention_images/131856_what_is_floating_in_the_sky_refatt.png" width=200 height=200>
+</td>
+<td>
+<img src="attention_images/131856_what_is_floating_in_the_sky_bestbertatt.png" width=200 height=200>
+</td>
+<td>
+<img src="attention_images/131856_what_is_floating_in_the_sky_vqabaselineattim.png" width=200 height=200>
+</td>
+<td>
+<img src="attention_images/131856_what_is_floating_in_the_sky_human.png" width=200 height=200>
+</td>
+<td>
+ False 
+</tr>
+<tr>
+</td>
+<td>
+ 39 
+</td>
+<td>
+<img src="https://vqa_mscoco_images.s3.amazonaws.com/val2014/COCO_val2014_000000418002.jpg" width=200 height=200>
+</td>
+<td>
+ <span style="color:rgb(186,0,0);">are</span> <span style="color:rgb(137,255,108);">there</span> <span style="color:rgb(0,0,127);">any</span> <span style="color:rgb(255,155,0);">people</span> <span style="color:rgb(0,0,127);">on</span> <span style="color:rgb(170,255,76);">this</span> <span style="color:rgb(0,44,255);">picture</span>  
+</td>
+<td>
+ no 
+</td>
+<td>
+ no 
+</td>
+<td>
+<img src="attention_images/418002_are_there_any_people_on_this_picture_cam.png" width=200 height=200>
+</td>
+<td>
+<img src="attention_images/418002_are_there_any_people_on_this_picture_refatt.png" width=200 height=200>
+</td>
+<td>
+<img src="attention_images/418002_are_there_any_people_on_this_picture_bestbertatt.png" width=200 height=200>
+</td>
+<td>
+<img src="attention_images/418002_are_there_any_people_on_this_picture_vqabaselineattim.png" width=200 height=200>
+</td>
+<td>
+<img src="attention_images/418002_are_there_any_people_on_this_picture_human.png" width=200 height=200>
+</td>
+<td>
+ False 
+</tr>
+<tr>
+</td>
+<td>
+ 40 
+</td>
+<td>
+<img src="https://vqa_mscoco_images.s3.amazonaws.com/val2014/COCO_val2014_000000445722.jpg" width=200 height=200>
+</td>
+<td>
+ <span style="color:rgb(150,0,0);">are</span> <span style="color:rgb(255,181,0);">they</span> <span style="color:rgb(0,0,127);">on</span> <span style="color:rgb(0,0,127);">a</span> <span style="color:rgb(0,0,127);">boat</span>  
+</td>
+<td>
+ yes 
+</td>
+<td>
+ yes 
+</td>
+<td>
+<img src="attention_images/445722_are_they_on_a_boat_cam.png" width=200 height=200>
+</td>
+<td>
+<img src="attention_images/445722_are_they_on_a_boat_refatt.png" width=200 height=200>
+</td>
+<td>
+<img src="attention_images/445722_are_they_on_a_boat_bestbertatt.png" width=200 height=200>
+</td>
+<td>
+<img src="attention_images/445722_are_they_on_a_boat_vqabaselineattim.png" width=200 height=200>
+</td>
+<td>
+<img src="attention_images/445722_are_they_on_a_boat_human.png" width=200 height=200>
+</td>
+<td>
+ False 
+</tr>
+<tr>
+</td>
+<td>
+ 41 
+</td>
+<td>
+<img src="https://vqa_mscoco_images.s3.amazonaws.com/val2014/COCO_val2014_000000434187.jpg" width=200 height=200>
+</td>
+<td>
+ <span style="color:rgb(173,255,73);">where</span> <span style="color:rgb(136,0,0);">are</span> <span style="color:rgb(0,0,127);">the</span> <span style="color:rgb(234,255,12);">people</span> <span style="color:rgb(0,0,127);">behind</span> <span style="color:rgb(0,0,127);">the</span> <span style="color:rgb(0,0,127);">bars</span>  
+</td>
+<td>
+ behind fence 
+</td>
+<td>
+ in jail 
+</td>
+<td>
+<img src="attention_images/434187_where_are_the_people_behind_the_bars_cam.png" width=200 height=200>
+</td>
+<td>
+<img src="attention_images/434187_where_are_the_people_behind_the_bars_refatt.png" width=200 height=200>
+</td>
+<td>
+<img src="attention_images/434187_where_are_the_people_behind_the_bars_bestbertatt.png" width=200 height=200>
+</td>
+<td>
+<img src="attention_images/434187_where_are_the_people_behind_the_bars_vqabaselineattim.png" width=200 height=200>
+</td>
+<td>
+<img src="attention_images/434187_where_are_the_people_behind_the_bars_human.png" width=200 height=200>
+</td>
+<td>
+ True 
+</tr>
+<tr>
+</td>
+<td>
+ 42 
+</td>
+<td>
+<img src="https://vqa_mscoco_images.s3.amazonaws.com/val2014/COCO_val2014_000000557107.jpg" width=200 height=200>
+</td>
+<td>
+ <span style="color:rgb(0,0,127);">is</span> <span style="color:rgb(227,0,0);">this</span> <span style="color:rgb(0,0,127);">girl</span> <span style="color:rgb(0,0,127);">wearing</span> <span style="color:rgb(0,0,127);">nail</span> <span style="color:rgb(0,0,127);">polish</span>  
+</td>
+<td>
+ no 
+</td>
+<td>
+ yes 
+</td>
+<td>
+<img src="attention_images/557107_is_this_girl_wearing_nail_polish_cam.png" width=200 height=200>
+</td>
+<td>
+<img src="attention_images/557107_is_this_girl_wearing_nail_polish_refatt.png" width=200 height=200>
+</td>
+<td>
+<img src="attention_images/557107_is_this_girl_wearing_nail_polish_bestbertatt.png" width=200 height=200>
+</td>
+<td>
+<img src="attention_images/557107_is_this_girl_wearing_nail_polish_vqabaselineattim.png" width=200 height=200>
+</td>
+<td>
+<img src="attention_images/557107_is_this_girl_wearing_nail_polish_human.png" width=200 height=200>
+</td>
+<td>
+ False 
+</tr>
+<tr>
+</td>
+<td>
+ 43 
+</td>
+<td>
+<img src="https://vqa_mscoco_images.s3.amazonaws.com/val2014/COCO_val2014_000000539937.jpg" width=200 height=200>
+</td>
+<td>
+ <span style="color:rgb(200,0,0);">what</span> <span style="color:rgb(0,0,127);">is</span> <span style="color:rgb(0,0,127);">the</span> <span style="color:rgb(0,0,127);">person</span> <span style="color:rgb(15,248,231);">looking</span> <span style="color:rgb(255,103,0);">at</span>  
+</td>
+<td>
+ kite 
+</td>
+<td>
+ kite 
+</td>
+<td>
+<img src="attention_images/539937_what_is_the_person_looking_at_cam.png" width=200 height=200>
+</td>
+<td>
+<img src="attention_images/539937_what_is_the_person_looking_at_refatt.png" width=200 height=200>
+</td>
+<td>
+<img src="attention_images/539937_what_is_the_person_looking_at_bestbertatt.png" width=200 height=200>
+</td>
+<td>
+<img src="attention_images/539937_what_is_the_person_looking_at_vqabaselineattim.png" width=200 height=200>
+</td>
+<td>
+<img src="attention_images/539937_what_is_the_person_looking_at_human.png" width=200 height=200>
+</td>
+<td>
+ False 
+</tr>
+<tr>
+</td>
+<td>
+ 44 
+</td>
+<td>
+<img src="https://vqa_mscoco_images.s3.amazonaws.com/val2014/COCO_val2014_000000222299.jpg" width=200 height=200>
+</td>
+<td>
+ <span style="color:rgb(0,152,255);">what</span> <span style="color:rgb(50,255,195);">items</span> <span style="color:rgb(132,0,0);">are</span> <span style="color:rgb(0,0,127);">on</span> <span style="color:rgb(0,0,127);">the</span> <span style="color:rgb(0,0,127);">rug</span>  
+</td>
+<td>
+ books 
+</td>
+<td>
+ there is no rug that's bedspread 
+</td>
+<td>
+<img src="attention_images/222299_what_items_are_on_the_rug_cam.png" width=200 height=200>
+</td>
+<td>
+<img src="attention_images/222299_what_items_are_on_the_rug_refatt.png" width=200 height=200>
+</td>
+<td>
+<img src="attention_images/222299_what_items_are_on_the_rug_bestbertatt.png" width=200 height=200>
+</td>
+<td>
+<img src="attention_images/222299_what_items_are_on_the_rug_vqabaselineattim.png" width=200 height=200>
+</td>
+<td>
+<img src="attention_images/222299_what_items_are_on_the_rug_human.png" width=200 height=200>
+</td>
+<td>
+ True 
+</tr>
+<tr>
+</td>
+<td>
+ 45 
+</td>
+<td>
+<img src="https://vqa_mscoco_images.s3.amazonaws.com/val2014/COCO_val2014_000000408047.jpg" width=200 height=200>
+</td>
+<td>
+ <span style="color:rgb(224,255,21);">where</span> <span style="color:rgb(132,0,0);">are</span> <span style="color:rgb(0,0,127);">the</span> <span style="color:rgb(0,0,127);">yellow</span> <span style="color:rgb(0,0,127);">cabs</span>  
+</td>
+<td>
+ car 
+</td>
+<td>
+ road 
+</td>
+<td>
+<img src="attention_images/408047_where_are_the_yellow_cabs_cam.png" width=200 height=200>
+</td>
+<td>
+<img src="attention_images/408047_where_are_the_yellow_cabs_refatt.png" width=200 height=200>
+</td>
+<td>
+<img src="attention_images/408047_where_are_the_yellow_cabs_bestbertatt.png" width=200 height=200>
+</td>
+<td>
+<img src="attention_images/408047_where_are_the_yellow_cabs_vqabaselineattim.png" width=200 height=200>
+</td>
+<td>
+<img src="attention_images/408047_where_are_the_yellow_cabs_human.png" width=200 height=200>
+</td>
+<td>
+ True 
+</tr>
+<tr>
+</td>
+<td>
+ 46 
+</td>
+<td>
+<img src="https://vqa_mscoco_images.s3.amazonaws.com/val2014/COCO_val2014_000000118515.jpg" width=200 height=200>
+</td>
+<td>
+ <span style="color:rgb(236,3,0);">what</span> <span style="color:rgb(0,0,127);">animal</span> <span style="color:rgb(0,0,127);">is</span> <span style="color:rgb(0,0,127);">on</span> <span style="color:rgb(0,0,127);">the</span> <span style="color:rgb(0,0,127);">bench</span>  
+</td>
+<td>
+ cat 
+</td>
+<td>
+ cat 
+</td>
+<td>
+<img src="attention_images/118515_what_animal_is_on_the_bench_cam.png" width=200 height=200>
+</td>
+<td>
+<img src="attention_images/118515_what_animal_is_on_the_bench_refatt.png" width=200 height=200>
+</td>
+<td>
+<img src="attention_images/118515_what_animal_is_on_the_bench_bestbertatt.png" width=200 height=200>
+</td>
+<td>
+<img src="attention_images/118515_what_animal_is_on_the_bench_vqabaselineattim.png" width=200 height=200>
+</td>
+<td>
+<img src="attention_images/118515_what_animal_is_on_the_bench_human.png" width=200 height=200>
+</td>
+<td>
+ False 
+</tr>
+<tr>
+</td>
+<td>
+ 47 
+</td>
+<td>
+<img src="https://vqa_mscoco_images.s3.amazonaws.com/val2014/COCO_val2014_000000271892.jpg" width=200 height=200>
+</td>
+<td>
+ <span style="color:rgb(177,0,0);">are</span> <span style="color:rgb(0,0,127);">the</span> <span style="color:rgb(0,0,213);">cows</span> <span style="color:rgb(0,164,255);">being</span> <span style="color:rgb(0,0,254);">milked</span>  
+</td>
+<td>
+ yes 
+</td>
+<td>
+ yes 
+</td>
+<td>
+<img src="attention_images/271892_are_the_cows_being_milked_cam.png" width=200 height=200>
+</td>
+<td>
+<img src="attention_images/271892_are_the_cows_being_milked_refatt.png" width=200 height=200>
+</td>
+<td>
+<img src="attention_images/271892_are_the_cows_being_milked_bestbertatt.png" width=200 height=200>
+</td>
+<td>
+<img src="attention_images/271892_are_the_cows_being_milked_vqabaselineattim.png" width=200 height=200>
+</td>
+<td>
+<img src="attention_images/271892_are_the_cows_being_milked_human.png" width=200 height=200>
+</td>
+<td>
+ False 
+</tr>
+<tr>
+</td>
+<td>
+ 48 
+</td>
+<td>
+<img src="https://vqa_mscoco_images.s3.amazonaws.com/val2014/COCO_val2014_000000289870.jpg" width=200 height=200>
+</td>
+<td>
+ <span style="color:rgb(150,0,0);">what</span> <span style="color:rgb(0,0,127);">color</span> <span style="color:rgb(0,0,127);">is</span> <span style="color:rgb(0,0,127);">the</span> <span style="color:rgb(0,0,127);">signal</span> <span style="color:rgb(0,0,127);">light</span>  
+</td>
+<td>
+ yellow 
+</td>
+<td>
+ red 
+</td>
+<td>
+<img src="attention_images/289870_what_color_is_the_signal_light_cam.png" width=200 height=200>
+</td>
+<td>
+<img src="attention_images/289870_what_color_is_the_signal_light_refatt.png" width=200 height=200>
+</td>
+<td>
+<img src="attention_images/289870_what_color_is_the_signal_light_bestbertatt.png" width=200 height=200>
+</td>
+<td>
+<img src="attention_images/289870_what_color_is_the_signal_light_vqabaselineattim.png" width=200 height=200>
+</td>
+<td>
+<img src="attention_images/289870_what_color_is_the_signal_light_human.png" width=200 height=200>
+</td>
+<td>
+ True 
+</tr>
+<tr>
+</td>
+<td>
+ 49 
+</td>
+<td>
+<img src="https://vqa_mscoco_images.s3.amazonaws.com/val2014/COCO_val2014_000000015850.jpg" width=200 height=200>
+</td>
+<td>
+ <span style="color:rgb(105,255,141);">how</span> <span style="color:rgb(132,0,0);">many</span> <span style="color:rgb(0,0,127);">slices</span> <span style="color:rgb(0,0,127);">of</span> <span style="color:rgb(0,0,127);">chicken</span> <span style="color:rgb(255,59,0);">are</span> <span style="color:rgb(41,255,205);">in</span> <span style="color:rgb(195,255,50);">this</span> <span style="color:rgb(0,64,255);">picture</span>  
+</td>
+<td>
+ 2 
+</td>
+<td>
+ 15 
+</td>
+<td>
+<img src="attention_images/15850_how_many_slices_of_chicken_are_in_this_picture_cam.png" width=200 height=200>
+</td>
+<td>
+<img src="attention_images/15850_how_many_slices_of_chicken_are_in_this_picture_refatt.png" width=200 height=200>
+</td>
+<td>
+<img src="attention_images/15850_how_many_slices_of_chicken_are_in_this_picture_bestbertatt.png" width=200 height=200>
+</td>
+<td>
+<img src="attention_images/15850_how_many_slices_of_chicken_are_in_this_picture_vqabaselineattim.png" width=200 height=200>
+</td>
+<td>
+<img src="attention_images/15850_how_many_slices_of_chicken_are_in_this_picture_human.png" width=200 height=200>
+</td>
+<td>
+ True 
+</tr>
+<tr>
+</td>
+<td>
+ 50 
+</td>
+<td>
+<img src="https://vqa_mscoco_images.s3.amazonaws.com/val2014/COCO_val2014_000000262658.jpg" width=200 height=200>
+</td>
+<td>
+ <span style="color:rgb(192,255,54);">how</span> <span style="color:rgb(150,0,0);">many</span> <span style="color:rgb(154,255,92);">people</span> <span style="color:rgb(255,96,0);">are</span> <span style="color:rgb(0,0,127);">seated</span>  
+</td>
+<td>
+ 3 
+</td>
+<td>
+ 2 
+</td>
+<td>
+<img src="attention_images/262658_how_many_people_are_seated_cam.png" width=200 height=200>
+</td>
+<td>
+<img src="attention_images/262658_how_many_people_are_seated_refatt.png" width=200 height=200>
+</td>
+<td>
+<img src="attention_images/262658_how_many_people_are_seated_bestbertatt.png" width=200 height=200>
+</td>
+<td>
+<img src="attention_images/262658_how_many_people_are_seated_vqabaselineattim.png" width=200 height=200>
+</td>
+<td>
+<img src="attention_images/262658_how_many_people_are_seated_human.png" width=200 height=200>
+</td>
+<td>
+ False 
+</tr>
+<tr>
+</td>
+<td>
+ 51 
+</td>
+<td>
+<img src="https://vqa_mscoco_images.s3.amazonaws.com/val2014/COCO_val2014_000000513724.jpg" width=200 height=200>
+</td>
+<td>
+ <span style="color:rgb(0,0,127);">is</span> <span style="color:rgb(0,0,127);">the</span> <span style="color:rgb(0,0,127);">girl</span> <span style="color:rgb(0,0,127);">running</span> <span style="color:rgb(227,0,0);">from</span> <span style="color:rgb(0,0,127);">the</span> <span style="color:rgb(0,0,127);">elephant</span>  
+</td>
+<td>
+ no 
+</td>
+<td>
+ no 
+</td>
+<td>
+<img src="attention_images/513724_is_the_girl_running_from_the_elephant_cam.png" width=200 height=200>
+</td>
+<td>
+<img src="attention_images/513724_is_the_girl_running_from_the_elephant_refatt.png" width=200 height=200>
+</td>
+<td>
+<img src="attention_images/513724_is_the_girl_running_from_the_elephant_bestbertatt.png" width=200 height=200>
+</td>
+<td>
+<img src="attention_images/513724_is_the_girl_running_from_the_elephant_vqabaselineattim.png" width=200 height=200>
+</td>
+<td>
+<img src="attention_images/513724_is_the_girl_running_from_the_elephant_human.png" width=200 height=200>
+</td>
+<td>
+ False 
+</tr>
+<tr>
+</td>
+<td>
+ 52 
+</td>
+<td>
+<img src="https://vqa_mscoco_images.s3.amazonaws.com/val2014/COCO_val2014_000000557107.jpg" width=200 height=200>
+</td>
+<td>
+ <span style="color:rgb(0,0,127);">is</span> <span style="color:rgb(227,0,0);">this</span> <span style="color:rgb(0,0,127);">girl</span> <span style="color:rgb(0,0,127);">wearing</span> <span style="color:rgb(0,0,127);">nail</span> <span style="color:rgb(0,0,127);">polish</span>  
+</td>
+<td>
+ no 
+</td>
+<td>
+ yes 
+</td>
+<td>
+<img src="attention_images/557107_is_this_girl_wearing_nail_polish_cam.png" width=200 height=200>
+</td>
+<td>
+<img src="attention_images/557107_is_this_girl_wearing_nail_polish_refatt.png" width=200 height=200>
+</td>
+<td>
+<img src="attention_images/557107_is_this_girl_wearing_nail_polish_bestbertatt.png" width=200 height=200>
+</td>
+<td>
+<img src="attention_images/557107_is_this_girl_wearing_nail_polish_vqabaselineattim.png" width=200 height=200>
+</td>
+<td>
+<img src="attention_images/557107_is_this_girl_wearing_nail_polish_human.png" width=200 height=200>
+</td>
+<td>
+ False 
+</tr>
+<tr>
+</td>
+<td>
+ 53 
+</td>
+<td>
+<img src="https://vqa_mscoco_images.s3.amazonaws.com/val2014/COCO_val2014_000000515050.jpg" width=200 height=200>
+</td>
+<td>
+ <span style="color:rgb(195,255,50);">which</span> <span style="color:rgb(195,0,0);">way</span> <span style="color:rgb(0,0,127);">is</span> <span style="color:rgb(0,0,127);">the</span> <span style="color:rgb(0,0,127);">giraffe</span> <span style="color:rgb(0,0,127);">facing</span>  
+</td>
+<td>
+ right 
+</td>
+<td>
+ right 
+</td>
+<td>
+<img src="attention_images/515050_which_way_is_the_giraffe_facing_cam.png" width=200 height=200>
+</td>
+<td>
+<img src="attention_images/515050_which_way_is_the_giraffe_facing_refatt.png" width=200 height=200>
+</td>
+<td>
+<img src="attention_images/515050_which_way_is_the_giraffe_facing_bestbertatt.png" width=200 height=200>
+</td>
+<td>
+<img src="attention_images/515050_which_way_is_the_giraffe_facing_vqabaselineattim.png" width=200 height=200>
+</td>
+<td>
+<img src="attention_images/515050_which_way_is_the_giraffe_facing_human.png" width=200 height=200>
+</td>
+<td>
+ False 
+</tr>
+<tr>
+</td>
+<td>
+ 54 
+</td>
+<td>
+<img src="https://vqa_mscoco_images.s3.amazonaws.com/val2014/COCO_val2014_000000511241.jpg" width=200 height=200>
+</td>
+<td>
+ <span style="color:rgb(0,0,127);">is</span> <span style="color:rgb(0,0,127);">that</span> <span style="color:rgb(0,0,127);">orange</span> <span style="color:rgb(0,0,127);">juice</span>  
+</td>
+<td>
+ yes 
+</td>
+<td>
+ no 
+</td>
+<td>
+<img src="attention_images/511241_is_that_orange_juice_cam.png" width=200 height=200>
+</td>
+<td>
+<img src="attention_images/511241_is_that_orange_juice_refatt.png" width=200 height=200>
+</td>
+<td>
+<img src="attention_images/511241_is_that_orange_juice_bestbertatt.png" width=200 height=200>
+</td>
+<td>
+<img src="attention_images/511241_is_that_orange_juice_vqabaselineattim.png" width=200 height=200>
+</td>
+<td>
+<img src="attention_images/511241_is_that_orange_juice_human.png" width=200 height=200>
+</td>
+<td>
+ False 
+</tr>
+<tr>
+</td>
+<td>
+ 55 
+</td>
+<td>
+<img src="https://vqa_mscoco_images.s3.amazonaws.com/val2014/COCO_val2014_000000000338.jpg" width=200 height=200>
+</td>
+<td>
+ <span style="color:rgb(124,255,121);">what</span> <span style="color:rgb(0,0,127);">is</span> <span style="color:rgb(0,0,127);">the</span> <span style="color:rgb(0,0,127);">man</span> <span style="color:rgb(141,0,0);">doing</span>  
+</td>
+<td>
+ cooking 
+</td>
+<td>
+ writing 
+</td>
+<td>
+<img src="attention_images/338_what_is_the_man_doing_cam.png" width=200 height=200>
+</td>
+<td>
+<img src="attention_images/338_what_is_the_man_doing_refatt.png" width=200 height=200>
+</td>
+<td>
+<img src="attention_images/338_what_is_the_man_doing_bestbertatt.png" width=200 height=200>
+</td>
+<td>
+<img src="attention_images/338_what_is_the_man_doing_vqabaselineattim.png" width=200 height=200>
+</td>
+<td>
+<img src="attention_images/338_what_is_the_man_doing_human.png" width=200 height=200>
+</td>
+<td>
+ True 
+</tr>
+<tr>
+</td>
+<td>
+ 56 
+</td>
+<td>
+<img src="https://vqa_mscoco_images.s3.amazonaws.com/val2014/COCO_val2014_000000255004.jpg" width=200 height=200>
+</td>
+<td>
+ <span style="color:rgb(0,0,127);">is</span> <span style="color:rgb(0,0,127);">the</span> <span style="color:rgb(0,0,127);">man</span> <span style="color:rgb(0,0,127);">wearing</span> <span style="color:rgb(0,0,127);">a</span> <span style="color:rgb(0,0,127);">helmet</span>  
+</td>
+<td>
+ no 
+</td>
+<td>
+ no 
+</td>
+<td>
+<img src="attention_images/255004_is_the_man_wearing_a_helmet_cam.png" width=200 height=200>
+</td>
+<td>
+<img src="attention_images/255004_is_the_man_wearing_a_helmet_refatt.png" width=200 height=200>
+</td>
+<td>
+<img src="attention_images/255004_is_the_man_wearing_a_helmet_bestbertatt.png" width=200 height=200>
+</td>
+<td>
+<img src="attention_images/255004_is_the_man_wearing_a_helmet_vqabaselineattim.png" width=200 height=200>
+</td>
+<td>
+<img src="attention_images/255004_is_the_man_wearing_a_helmet_human.png" width=200 height=200>
+</td>
+<td>
+ False 
+</tr>
+<tr>
+</td>
+<td>
+ 57 
+</td>
+<td>
+<img src="https://vqa_mscoco_images.s3.amazonaws.com/val2014/COCO_val2014_000000429293.jpg" width=200 height=200>
+</td>
+<td>
+ <span style="color:rgb(0,0,232);">which</span> <span style="color:rgb(255,148,0);">food</span> <span style="color:rgb(0,0,127);">is</span> <span style="color:rgb(0,0,127);">a</span> <span style="color:rgb(0,0,127);">side</span> <span style="color:rgb(154,0,0);">order</span>  
+</td>
+<td>
+ fries 
+</td>
+<td>
+ fries 
+</td>
+<td>
+<img src="attention_images/429293_which_food_is_a_side_order_cam.png" width=200 height=200>
+</td>
+<td>
+<img src="attention_images/429293_which_food_is_a_side_order_refatt.png" width=200 height=200>
+</td>
+<td>
+<img src="attention_images/429293_which_food_is_a_side_order_bestbertatt.png" width=200 height=200>
+</td>
+<td>
+<img src="attention_images/429293_which_food_is_a_side_order_vqabaselineattim.png" width=200 height=200>
+</td>
+<td>
+<img src="attention_images/429293_which_food_is_a_side_order_human.png" width=200 height=200>
+</td>
+<td>
+ True 
+</tr>
+<tr>
+</td>
+<td>
+ 58 
+</td>
+<td>
+<img src="https://vqa_mscoco_images.s3.amazonaws.com/val2014/COCO_val2014_000000462755.jpg" width=200 height=200>
+</td>
+<td>
+ <span style="color:rgb(60,255,186);">what</span> <span style="color:rgb(136,0,0);">are</span> <span style="color:rgb(0,0,127);">the</span> <span style="color:rgb(255,192,0);">people</span> <span style="color:rgb(63,255,183);">doing</span>  
+</td>
+<td>
+ flying kites 
+</td>
+<td>
+ flying kites 
+</td>
+<td>
+<img src="attention_images/462755_what_are_the_people_doing_cam.png" width=200 height=200>
+</td>
+<td>
+<img src="attention_images/462755_what_are_the_people_doing_refatt.png" width=200 height=200>
+</td>
+<td>
+<img src="attention_images/462755_what_are_the_people_doing_bestbertatt.png" width=200 height=200>
+</td>
+<td>
+<img src="attention_images/462755_what_are_the_people_doing_vqabaselineattim.png" width=200 height=200>
+</td>
+<td>
+<img src="attention_images/462755_what_are_the_people_doing_human.png" width=200 height=200>
+</td>
+<td>
+ False 
+</tr>
+<tr>
+</td>
+<td>
+ 59 
+</td>
+<td>
+<img src="https://vqa_mscoco_images.s3.amazonaws.com/val2014/COCO_val2014_000000058701.jpg" width=200 height=200>
+</td>
+<td>
+ <span style="color:rgb(150,0,0);">what</span> <span style="color:rgb(0,0,127);">color</span> <span style="color:rgb(0,0,127);">is</span> <span style="color:rgb(0,0,127);">the</span> <span style="color:rgb(0,0,127);">traffic</span> <span style="color:rgb(0,0,127);">light</span>  
+</td>
+<td>
+ red 
+</td>
+<td>
+ red 
+</td>
+<td>
+<img src="attention_images/58701_what_color_is_the_traffic_light_cam.png" width=200 height=200>
+</td>
+<td>
+<img src="attention_images/58701_what_color_is_the_traffic_light_refatt.png" width=200 height=200>
+</td>
+<td>
+<img src="attention_images/58701_what_color_is_the_traffic_light_bestbertatt.png" width=200 height=200>
+</td>
+<td>
+<img src="attention_images/58701_what_color_is_the_traffic_light_vqabaselineattim.png" width=200 height=200>
+</td>
+<td>
+<img src="attention_images/58701_what_color_is_the_traffic_light_human.png" width=200 height=200>
+</td>
+<td>
+ True 
+</tr>
+<tr>
+</td>
+<td>
+ 60 
+</td>
+<td>
+<img src="https://vqa_mscoco_images.s3.amazonaws.com/val2014/COCO_val2014_000000537206.jpg" width=200 height=200>
+</td>
+<td>
+ <span style="color:rgb(0,0,127);">why</span> <span style="color:rgb(0,0,127);">is</span> <span style="color:rgb(0,0,127);">the</span> <span style="color:rgb(0,0,127);">man</span> <span style="color:rgb(0,0,127);">wearing</span> <span style="color:rgb(0,0,127);">protective</span> <span style="color:rgb(0,0,127);">gear</span>  
+</td>
+<td>
+ safety 
+</td>
+<td>
+ yes 
+</td>
+<td>
+<img src="attention_images/537206_why_is_the_man_wearing_protective_gear_cam.png" width=200 height=200>
+</td>
+<td>
+<img src="attention_images/537206_why_is_the_man_wearing_protective_gear_refatt.png" width=200 height=200>
+</td>
+<td>
+<img src="attention_images/537206_why_is_the_man_wearing_protective_gear_bestbertatt.png" width=200 height=200>
+</td>
+<td>
+<img src="attention_images/537206_why_is_the_man_wearing_protective_gear_vqabaselineattim.png" width=200 height=200>
+</td>
+<td>
+<img src="attention_images/537206_why_is_the_man_wearing_protective_gear_human.png" width=200 height=200>
+</td>
+<td>
+ True 
+</tr>
+<tr>
+</td>
+<td>
+ 61 
+</td>
+<td>
+<img src="https://vqa_mscoco_images.s3.amazonaws.com/val2014/COCO_val2014_000000453954.jpg" width=200 height=200>
+</td>
+<td>
+ <span style="color:rgb(159,0,0);">what</span> <span style="color:rgb(0,0,127);">color</span> <span style="color:rgb(0,0,127);">is</span> <span style="color:rgb(0,0,127);">the</span> <span style="color:rgb(0,0,127);">bus</span>  
+</td>
+<td>
+ white 
+</td>
+<td>
+ white and blue 
+</td>
+<td>
+<img src="attention_images/453954_what_color_is_the_bus_cam.png" width=200 height=200>
+</td>
+<td>
+<img src="attention_images/453954_what_color_is_the_bus_refatt.png" width=200 height=200>
+</td>
+<td>
+<img src="attention_images/453954_what_color_is_the_bus_bestbertatt.png" width=200 height=200>
+</td>
+<td>
+<img src="attention_images/453954_what_color_is_the_bus_vqabaselineattim.png" width=200 height=200>
+</td>
+<td>
+<img src="attention_images/453954_what_color_is_the_bus_human.png" width=200 height=200>
+</td>
+<td>
+ True 
+</tr>
+<tr>
+</td>
+<td>
+ 62 
+</td>
+<td>
+<img src="https://vqa_mscoco_images.s3.amazonaws.com/val2014/COCO_val2014_000000244167.jpg" width=200 height=200>
+</td>
+<td>
+ <span style="color:rgb(112,255,134);">how</span> <span style="color:rgb(136,0,0);">many</span> <span style="color:rgb(0,0,127);">of</span> <span style="color:rgb(0,0,127);">the</span> <span style="color:rgb(0,0,127);">calf's</span> <span style="color:rgb(137,255,108);">eyes</span> <span style="color:rgb(157,255,89);">can</span> <span style="color:rgb(0,156,255);">we</span> <span style="color:rgb(2,232,244);">see</span> <span style="color:rgb(157,255,89);">in</span> <span style="color:rgb(0,0,232);">this</span>  
+</td>
+<td>
+ 1 
+</td>
+<td>
+ 1 
+</td>
+<td>
+<img src="attention_images/244167_how_many_of_the_calf's_eyes_can_we_see_in_this_scene_cam.png" width=200 height=200>
+</td>
+<td>
+<img src="attention_images/244167_how_many_of_the_calf's_eyes_can_we_see_in_this_scene_refatt.png" width=200 height=200>
+</td>
+<td>
+<img src="attention_images/244167_how_many_of_the_calf's_eyes_can_we_see_in_this_scene_bestbertatt.png" width=200 height=200>
+</td>
+<td>
+<img src="attention_images/244167_how_many_of_the_calf's_eyes_can_we_see_in_this_scene_vqabaselineattim.png" width=200 height=200>
+</td>
+<td>
+<img src="attention_images/244167_how_many_of_the_calf's_eyes_can_we_see_in_this_scene_human.png" width=200 height=200>
+</td>
+<td>
+ False 
+</tr>
+<tr>
+</td>
+<td>
+ 63 
+</td>
+<td>
+<img src="https://vqa_mscoco_images.s3.amazonaws.com/val2014/COCO_val2014_000000217936.jpg" width=200 height=200>
+</td>
+<td>
+ <span style="color:rgb(0,0,127);">is</span> <span style="color:rgb(0,0,127);">the</span> <span style="color:rgb(0,0,127);">lady</span> <span style="color:rgb(186,255,60);">in</span> <span style="color:rgb(0,0,127);">front</span> <span style="color:rgb(154,255,92);">about</span> <span style="color:rgb(241,7,0);">to</span> <span style="color:rgb(0,0,127);">hit</span> <span style="color:rgb(0,0,127);">the</span> <span style="color:rgb(0,0,127);">ball</span>  
+</td>
+<td>
+ yes 
+</td>
+<td>
+ yes 
+</td>
+<td>
+<img src="attention_images/217936_is_the_lady_in_front_about_to_hit_the_ball_cam.png" width=200 height=200>
+</td>
+<td>
+<img src="attention_images/217936_is_the_lady_in_front_about_to_hit_the_ball_refatt.png" width=200 height=200>
+</td>
+<td>
+<img src="attention_images/217936_is_the_lady_in_front_about_to_hit_the_ball_bestbertatt.png" width=200 height=200>
+</td>
+<td>
+<img src="attention_images/217936_is_the_lady_in_front_about_to_hit_the_ball_vqabaselineattim.png" width=200 height=200>
+</td>
+<td>
+<img src="attention_images/217936_is_the_lady_in_front_about_to_hit_the_ball_human.png" width=200 height=200>
+</td>
+<td>
+ False 
+</tr>
+<tr>
+</td>
+<td>
+ 64 
+</td>
+<td>
+<img src="https://vqa_mscoco_images.s3.amazonaws.com/val2014/COCO_val2014_000000563195.jpg" width=200 height=200>
+</td>
+<td>
+ <span style="color:rgb(195,0,0);">how</span> <span style="color:rgb(159,0,0);">many</span> <span style="color:rgb(0,0,127);">bridges</span> <span style="color:rgb(255,129,0);">are</span> <span style="color:rgb(160,255,86);">there</span>  
+</td>
+<td>
+ 2 
+</td>
+<td>
+ 1 
+</td>
+<td>
+<img src="attention_images/563195_how_many_bridges_are_there_cam.png" width=200 height=200>
+</td>
+<td>
+<img src="attention_images/563195_how_many_bridges_are_there_refatt.png" width=200 height=200>
+</td>
+<td>
+<img src="attention_images/563195_how_many_bridges_are_there_bestbertatt.png" width=200 height=200>
+</td>
+<td>
+<img src="attention_images/563195_how_many_bridges_are_there_vqabaselineattim.png" width=200 height=200>
+</td>
+<td>
+<img src="attention_images/563195_how_many_bridges_are_there_human.png" width=200 height=200>
+</td>
+<td>
+ False 
+</tr>
+<tr>
+</td>
+<td>
+ 65 
+</td>
+<td>
+<img src="https://vqa_mscoco_images.s3.amazonaws.com/val2014/COCO_val2014_000000127624.jpg" width=200 height=200>
+</td>
+<td>
+ <span style="color:rgb(0,0,127);">is</span> <span style="color:rgb(222,0,0);">this</span> <span style="color:rgb(0,0,127);">a</span> <span style="color:rgb(0,0,127);">subway</span>  
+</td>
+<td>
+ yes 
+</td>
+<td>
+ no 
+</td>
+<td>
+<img src="attention_images/127624_is_this_a_subway_cam.png" width=200 height=200>
+</td>
+<td>
+<img src="attention_images/127624_is_this_a_subway_refatt.png" width=200 height=200>
+</td>
+<td>
+<img src="attention_images/127624_is_this_a_subway_bestbertatt.png" width=200 height=200>
+</td>
+<td>
+<img src="attention_images/127624_is_this_a_subway_vqabaselineattim.png" width=200 height=200>
+</td>
+<td>
+<img src="attention_images/127624_is_this_a_subway_human.png" width=200 height=200>
+</td>
+<td>
+ False 
+</tr>
+<tr>
+</td>
+<td>
+ 66 
+</td>
+<td>
+<img src="https://vqa_mscoco_images.s3.amazonaws.com/val2014/COCO_val2014_000000225757.jpg" width=200 height=200>
+</td>
+<td>
+ <span style="color:rgb(163,0,0);">are</span> <span style="color:rgb(0,0,127);">the</span> <span style="color:rgb(0,0,127);">mobiles</span> <span style="color:rgb(0,88,255);">being</span> <span style="color:rgb(0,0,127);">charged</span>  
+</td>
+<td>
+ no 
+</td>
+<td>
+ yes 
+</td>
+<td>
+<img src="attention_images/225757_are_the_mobiles_being_charged_cam.png" width=200 height=200>
+</td>
+<td>
+<img src="attention_images/225757_are_the_mobiles_being_charged_refatt.png" width=200 height=200>
+</td>
+<td>
+<img src="attention_images/225757_are_the_mobiles_being_charged_bestbertatt.png" width=200 height=200>
+</td>
+<td>
+<img src="attention_images/225757_are_the_mobiles_being_charged_vqabaselineattim.png" width=200 height=200>
+</td>
+<td>
+<img src="attention_images/225757_are_the_mobiles_being_charged_human.png" width=200 height=200>
+</td>
+<td>
+ False 
+</tr>
+<tr>
+</td>
+<td>
+ 67 
+</td>
+<td>
+<img src="https://vqa_mscoco_images.s3.amazonaws.com/val2014/COCO_val2014_000000433804.jpg" width=200 height=200>
+</td>
+<td>
+ <span style="color:rgb(95,255,150);">how</span> <span style="color:rgb(141,0,0);">many</span> <span style="color:rgb(0,0,255);">motors</span> <span style="color:rgb(0,0,209);">does</span> <span style="color:rgb(0,0,127);">the</span> <span style="color:rgb(0,0,127);">boat</span> <span style="color:rgb(255,170,0);">have</span>  
+</td>
+<td>
+ 2 
+</td>
+<td>
+ 2 
+</td>
+<td>
+<img src="attention_images/433804_how_many_motors_does_the_boat_have_cam.png" width=200 height=200>
+</td>
+<td>
+<img src="attention_images/433804_how_many_motors_does_the_boat_have_refatt.png" width=200 height=200>
+</td>
+<td>
+<img src="attention_images/433804_how_many_motors_does_the_boat_have_bestbertatt.png" width=200 height=200>
+</td>
+<td>
+<img src="attention_images/433804_how_many_motors_does_the_boat_have_vqabaselineattim.png" width=200 height=200>
+</td>
+<td>
+<img src="attention_images/433804_how_many_motors_does_the_boat_have_human.png" width=200 height=200>
+</td>
+<td>
+ False 
+</tr>
+<tr>
+</td>
+<td>
+ 68 
+</td>
+<td>
+<img src="https://vqa_mscoco_images.s3.amazonaws.com/val2014/COCO_val2014_000000489266.jpg" width=200 height=200>
+</td>
+<td>
+ <span style="color:rgb(168,0,0);">what</span> <span style="color:rgb(255,211,0);">breed</span> <span style="color:rgb(0,0,127);">of</span> <span style="color:rgb(0,0,127);">pony</span> <span style="color:rgb(0,0,127);">is</span> <span style="color:rgb(199,255,47);">that</span>  
+</td>
+<td>
+ horse 
+</td>
+<td>
+ shetland 
+</td>
+<td>
+<img src="attention_images/489266_what_breed_of_pony_is_that_cam.png" width=200 height=200>
+</td>
+<td>
+<img src="attention_images/489266_what_breed_of_pony_is_that_refatt.png" width=200 height=200>
+</td>
+<td>
+<img src="attention_images/489266_what_breed_of_pony_is_that_bestbertatt.png" width=200 height=200>
+</td>
+<td>
+<img src="attention_images/489266_what_breed_of_pony_is_that_vqabaselineattim.png" width=200 height=200>
+</td>
+<td>
+<img src="attention_images/489266_what_breed_of_pony_is_that_human.png" width=200 height=200>
+</td>
+<td>
+ True 
+</tr>
+<tr>
+</td>
+<td>
+ 69 
+</td>
+<td>
+<img src="https://vqa_mscoco_images.s3.amazonaws.com/val2014/COCO_val2014_000000299468.jpg" width=200 height=200>
+</td>
+<td>
+ <span style="color:rgb(163,0,0);">what</span> <span style="color:rgb(0,0,127);">color</span> <span style="color:rgb(0,0,127);">is</span> <span style="color:rgb(0,0,127);">his</span> <span style="color:rgb(0,0,127);">tie</span>  
+</td>
+<td>
+ black 
+</td>
+<td>
+ black 
+</td>
+<td>
+<img src="attention_images/299468_what_color_is_his_tie_cam.png" width=200 height=200>
+</td>
+<td>
+<img src="attention_images/299468_what_color_is_his_tie_refatt.png" width=200 height=200>
+</td>
+<td>
+<img src="attention_images/299468_what_color_is_his_tie_bestbertatt.png" width=200 height=200>
+</td>
+<td>
+<img src="attention_images/299468_what_color_is_his_tie_vqabaselineattim.png" width=200 height=200>
+</td>
+<td>
+<img src="attention_images/299468_what_color_is_his_tie_human.png" width=200 height=200>
+</td>
+<td>
+ True 
+</tr>
+<tr>
+</td>
+<td>
+ 70 
+</td>
+<td>
+<img src="https://vqa_mscoco_images.s3.amazonaws.com/val2014/COCO_val2014_000000442993.jpg" width=200 height=200>
+</td>
+<td>
+ <span style="color:rgb(66,255,179);">what</span> <span style="color:rgb(0,116,255);">time</span> <span style="color:rgb(0,0,127);">of</span> <span style="color:rgb(0,0,127);">day</span> <span style="color:rgb(0,0,127);">is</span> <span style="color:rgb(150,0,0);">this</span>  
+</td>
+<td>
+ night 
+</td>
+<td>
+ night 
+</td>
+<td>
+<img src="attention_images/442993_what_time_of_day_is_this_cam.png" width=200 height=200>
+</td>
+<td>
+<img src="attention_images/442993_what_time_of_day_is_this_refatt.png" width=200 height=200>
+</td>
+<td>
+<img src="attention_images/442993_what_time_of_day_is_this_bestbertatt.png" width=200 height=200>
+</td>
+<td>
+<img src="attention_images/442993_what_time_of_day_is_this_vqabaselineattim.png" width=200 height=200>
+</td>
+<td>
+<img src="attention_images/442993_what_time_of_day_is_this_human.png" width=200 height=200>
+</td>
+<td>
+ False 
+</tr>
+<tr>
+</td>
+<td>
+ 71 
+</td>
+<td>
+<img src="https://vqa_mscoco_images.s3.amazonaws.com/val2014/COCO_val2014_000000266889.jpg" width=200 height=200>
+</td>
+<td>
+ <span style="color:rgb(102,255,144);">what</span> <span style="color:rgb(0,0,127);">sport</span> <span style="color:rgb(0,0,127);">is</span> <span style="color:rgb(0,0,127);">the</span> <span style="color:rgb(255,44,0);">girls</span> <span style="color:rgb(0,0,127);">playing</span>  
+</td>
+<td>
+ soccer 
+</td>
+<td>
+ soccer 
+</td>
+<td>
+<img src="attention_images/266889_what_sport_is_the_girls_playing_cam.png" width=200 height=200>
+</td>
+<td>
+<img src="attention_images/266889_what_sport_is_the_girls_playing_refatt.png" width=200 height=200>
+</td>
+<td>
+<img src="attention_images/266889_what_sport_is_the_girls_playing_bestbertatt.png" width=200 height=200>
+</td>
+<td>
+<img src="attention_images/266889_what_sport_is_the_girls_playing_vqabaselineattim.png" width=200 height=200>
+</td>
+<td>
+<img src="attention_images/266889_what_sport_is_the_girls_playing_human.png" width=200 height=200>
+</td>
+<td>
+ False 
+</tr>
+<tr>
+</td>
+<td>
+ 72 
+</td>
+<td>
+<img src="https://vqa_mscoco_images.s3.amazonaws.com/val2014/COCO_val2014_000000457394.jpg" width=200 height=200>
+</td>
+<td>
+ <span style="color:rgb(192,255,54);">what</span> <span style="color:rgb(0,0,127);">is</span> <span style="color:rgb(0,0,127);">dripping</span> <span style="color:rgb(150,0,0);">from</span> <span style="color:rgb(0,0,127);">the</span> <span style="color:rgb(0,0,127);">broccoli</span>  
+</td>
+<td>
+ noodles 
+</td>
+<td>
+ cheese 
+</td>
+<td>
+<img src="attention_images/457394_what_is_dripping_from_the_broccoli_cam.png" width=200 height=200>
+</td>
+<td>
+<img src="attention_images/457394_what_is_dripping_from_the_broccoli_refatt.png" width=200 height=200>
+</td>
+<td>
+<img src="attention_images/457394_what_is_dripping_from_the_broccoli_bestbertatt.png" width=200 height=200>
+</td>
+<td>
+<img src="attention_images/457394_what_is_dripping_from_the_broccoli_vqabaselineattim.png" width=200 height=200>
+</td>
+<td>
+<img src="attention_images/457394_what_is_dripping_from_the_broccoli_human.png" width=200 height=200>
+</td>
+<td>
+ True 
+</tr>
+<tr>
+</td>
+<td>
+ 73 
+</td>
+<td>
+<img src="https://vqa_mscoco_images.s3.amazonaws.com/val2014/COCO_val2014_000000517443.jpg" width=200 height=200>
+</td>
+<td>
+ <span style="color:rgb(172,0,0);">what</span> <span style="color:rgb(0,0,127);">is</span> <span style="color:rgb(0,0,127);">flying</span> <span style="color:rgb(0,0,127);">behind</span> <span style="color:rgb(0,0,127);">the</span> <span style="color:rgb(255,185,0);">structure</span>  
+</td>
+<td>
+ flag 
+</td>
+<td>
+ flag 
+</td>
+<td>
+<img src="attention_images/517443_what_is_flying_behind_the_structure_cam.png" width=200 height=200>
+</td>
+<td>
+<img src="attention_images/517443_what_is_flying_behind_the_structure_refatt.png" width=200 height=200>
+</td>
+<td>
+<img src="attention_images/517443_what_is_flying_behind_the_structure_bestbertatt.png" width=200 height=200>
+</td>
+<td>
+<img src="attention_images/517443_what_is_flying_behind_the_structure_vqabaselineattim.png" width=200 height=200>
+</td>
+<td>
+<img src="attention_images/517443_what_is_flying_behind_the_structure_human.png" width=200 height=200>
+</td>
+<td>
+ False 
+</tr>
+<tr>
+</td>
+<td>
+ 74 
+</td>
+<td>
+<img src="https://vqa_mscoco_images.s3.amazonaws.com/val2014/COCO_val2014_000000505335.jpg" width=200 height=200>
+</td>
+<td>
+ <span style="color:rgb(141,0,0);">who</span> <span style="color:rgb(0,0,127);">is</span> <span style="color:rgb(0,0,255);">speaking</span>  
+</td>
+<td>
+ man 
+</td>
+<td>
+ woman 
+</td>
+<td>
+<img src="attention_images/505335_who_is_speaking_cam.png" width=200 height=200>
+</td>
+<td>
+<img src="attention_images/505335_who_is_speaking_refatt.png" width=200 height=200>
+</td>
+<td>
+<img src="attention_images/505335_who_is_speaking_bestbertatt.png" width=200 height=200>
+</td>
+<td>
+<img src="attention_images/505335_who_is_speaking_vqabaselineattim.png" width=200 height=200>
+</td>
+<td>
+<img src="attention_images/505335_who_is_speaking_human.png" width=200 height=200>
+</td>
+<td>
+ True 
+</tr>
+<tr>
+</td>
+<td>
+ 75 
+</td>
+<td>
+<img src="https://vqa_mscoco_images.s3.amazonaws.com/val2014/COCO_val2014_000000291981.jpg" width=200 height=200>
+</td>
+<td>
+ <span style="color:rgb(173,255,73);">what</span> <span style="color:rgb(0,0,127);">color</span> <span style="color:rgb(0,0,127);">is</span> <span style="color:rgb(0,0,127);">the</span> <span style="color:rgb(0,0,127);">trash</span> <span style="color:rgb(132,0,0);">can</span>  
+</td>
+<td>
+ black 
+</td>
+<td>
+ gray 
+</td>
+<td>
+<img src="attention_images/291981_what_color_is_the_trash_can_cam.png" width=200 height=200>
+</td>
+<td>
+<img src="attention_images/291981_what_color_is_the_trash_can_refatt.png" width=200 height=200>
+</td>
+<td>
+<img src="attention_images/291981_what_color_is_the_trash_can_bestbertatt.png" width=200 height=200>
+</td>
+<td>
+<img src="attention_images/291981_what_color_is_the_trash_can_vqabaselineattim.png" width=200 height=200>
+</td>
+<td>
+<img src="attention_images/291981_what_color_is_the_trash_can_human.png" width=200 height=200>
+</td>
+<td>
+ True 
+</tr>
+<tr>
+</td>
+<td>
+ 76 
+</td>
+<td>
+<img src="https://vqa_mscoco_images.s3.amazonaws.com/val2014/COCO_val2014_000000232790.jpg" width=200 height=200>
+</td>
+<td>
+ <span style="color:rgb(205,255,41);">where</span> <span style="color:rgb(132,0,0);">are</span> <span style="color:rgb(0,0,127);">the</span> <span style="color:rgb(0,0,127);">ties</span>  
+</td>
+<td>
+ nowhere 
+</td>
+<td>
+ on rack 
+</td>
+<td>
+<img src="attention_images/232790_where_are_the_ties_cam.png" width=200 height=200>
+</td>
+<td>
+<img src="attention_images/232790_where_are_the_ties_refatt.png" width=200 height=200>
+</td>
+<td>
+<img src="attention_images/232790_where_are_the_ties_bestbertatt.png" width=200 height=200>
+</td>
+<td>
+<img src="attention_images/232790_where_are_the_ties_vqabaselineattim.png" width=200 height=200>
+</td>
+<td>
+<img src="attention_images/232790_where_are_the_ties_human.png" width=200 height=200>
+</td>
+<td>
+ True 
+</tr>
+<tr>
+</td>
+<td>
+ 77 
+</td>
+<td>
+<img src="https://vqa_mscoco_images.s3.amazonaws.com/val2014/COCO_val2014_000000363908.jpg" width=200 height=200>
+</td>
+<td>
+ <span style="color:rgb(44,255,202);">what</span> <span style="color:rgb(0,0,127);">is</span> <span style="color:rgb(0,0,127);">the</span> <span style="color:rgb(0,0,127);">jersey</span> <span style="color:rgb(132,0,0);">number</span> <span style="color:rgb(0,80,255);">for</span> <span style="color:rgb(0,0,127);">the</span> <span style="color:rgb(0,0,127);">player</span> <span style="color:rgb(2,232,244);">at</span> <span style="color:rgb(0,0,127);">bat</span>  
+</td>
+<td>
+ 5 
+</td>
+<td>
+ 9 
+</td>
+<td>
+<img src="attention_images/363908_what_is_the_jersey_number_for_the_player_at_bat_cam.png" width=200 height=200>
+</td>
+<td>
+<img src="attention_images/363908_what_is_the_jersey_number_for_the_player_at_bat_refatt.png" width=200 height=200>
+</td>
+<td>
+<img src="attention_images/363908_what_is_the_jersey_number_for_the_player_at_bat_bestbertatt.png" width=200 height=200>
+</td>
+<td>
+<img src="attention_images/363908_what_is_the_jersey_number_for_the_player_at_bat_vqabaselineattim.png" width=200 height=200>
+</td>
+<td>
+<img src="attention_images/363908_what_is_the_jersey_number_for_the_player_at_bat_human.png" width=200 height=200>
+</td>
+<td>
+ True 
+</tr>
+<tr>
+</td>
+<td>
+ 78 
+</td>
+<td>
+<img src="https://vqa_mscoco_images.s3.amazonaws.com/val2014/COCO_val2014_000000096832.jpg" width=200 height=200>
+</td>
+<td>
+ <span style="color:rgb(0,0,127);">what's</span> <span style="color:rgb(0,0,127);">the</span> <span style="color:rgb(0,0,127);">color</span> <span style="color:rgb(0,0,127);">on</span> <span style="color:rgb(0,0,127);">the</span>  
+</td>
+<td>
+ white 
+</td>
+<td>
+ black 
+</td>
+<td>
+<img src="attention_images/96832_what's_the_color_on_the_table_cam.png" width=200 height=200>
+</td>
+<td>
+<img src="attention_images/96832_what's_the_color_on_the_table_refatt.png" width=200 height=200>
+</td>
+<td>
+<img src="attention_images/96832_what's_the_color_on_the_table_bestbertatt.png" width=200 height=200>
+</td>
+<td>
+<img src="attention_images/96832_what's_the_color_on_the_table_vqabaselineattim.png" width=200 height=200>
+</td>
+<td>
+<img src="attention_images/96832_what's_the_color_on_the_table_human.png" width=200 height=200>
+</td>
+<td>
+ True 
+</tr>
+<tr>
+</td>
+<td>
+ 79 
+</td>
+<td>
+<img src="https://vqa_mscoco_images.s3.amazonaws.com/val2014/COCO_val2014_000000001342.jpg" width=200 height=200>
+</td>
+<td>
+ <span style="color:rgb(0,0,127);">is</span> <span style="color:rgb(0,0,127);">the</span> <span style="color:rgb(0,0,127);">print</span> <span style="color:rgb(0,0,127);">small</span>  
+</td>
+<td>
+ yes 
+</td>
+<td>
+ yes 
+</td>
+<td>
+<img src="attention_images/1342_is_the_print_small_cam.png" width=200 height=200>
+</td>
+<td>
+<img src="attention_images/1342_is_the_print_small_refatt.png" width=200 height=200>
+</td>
+<td>
+<img src="attention_images/1342_is_the_print_small_bestbertatt.png" width=200 height=200>
+</td>
+<td>
+<img src="attention_images/1342_is_the_print_small_vqabaselineattim.png" width=200 height=200>
+</td>
+<td>
+<img src="attention_images/1342_is_the_print_small_human.png" width=200 height=200>
+</td>
+<td>
+ False 
+</tr>
+<tr>
+</td>
+<td>
+ 80 
+</td>
+<td>
+<img src="https://vqa_mscoco_images.s3.amazonaws.com/val2014/COCO_val2014_000000529151.jpg" width=200 height=200>
+</td>
+<td>
+ <span style="color:rgb(21,255,225);">what</span> <span style="color:rgb(0,0,168);">kind</span> <span style="color:rgb(0,0,127);">of</span> <span style="color:rgb(0,228,247);">food</span> <span style="color:rgb(0,0,127);">is</span> <span style="color:rgb(145,0,0);">this</span>  
+</td>
+<td>
+ chinese 
+</td>
+<td>
+ chinese 
+</td>
+<td>
+<img src="attention_images/529151_what_kind_of_food_is_this_cam.png" width=200 height=200>
+</td>
+<td>
+<img src="attention_images/529151_what_kind_of_food_is_this_refatt.png" width=200 height=200>
+</td>
+<td>
+<img src="attention_images/529151_what_kind_of_food_is_this_bestbertatt.png" width=200 height=200>
+</td>
+<td>
+<img src="attention_images/529151_what_kind_of_food_is_this_vqabaselineattim.png" width=200 height=200>
+</td>
+<td>
+<img src="attention_images/529151_what_kind_of_food_is_this_human.png" width=200 height=200>
+</td>
+<td>
+ False 
+</tr>
+<tr>
+</td>
+<td>
+ 81 
+</td>
+<td>
+<img src="https://vqa_mscoco_images.s3.amazonaws.com/val2014/COCO_val2014_000000046736.jpg" width=200 height=200>
+</td>
+<td>
+ <span style="color:rgb(0,0,127);">is</span> <span style="color:rgb(204,0,0);">there</span> <span style="color:rgb(0,0,127);">water</span>  
+</td>
+<td>
+ yes 
+</td>
+<td>
+ yes 
+</td>
+<td>
+<img src="attention_images/46736_is_there_water_cam.png" width=200 height=200>
+</td>
+<td>
+<img src="attention_images/46736_is_there_water_refatt.png" width=200 height=200>
+</td>
+<td>
+<img src="attention_images/46736_is_there_water_bestbertatt.png" width=200 height=200>
+</td>
+<td>
+<img src="attention_images/46736_is_there_water_vqabaselineattim.png" width=200 height=200>
+</td>
+<td>
+<img src="attention_images/46736_is_there_water_human.png" width=200 height=200>
+</td>
+<td>
+ False 
+</tr>
+<tr>
+</td>
+<td>
+ 82 
+</td>
+<td>
+<img src="https://vqa_mscoco_images.s3.amazonaws.com/val2014/COCO_val2014_000000140929.jpg" width=200 height=200>
+</td>
+<td>
+ <span style="color:rgb(221,255,24);">what</span> <span style="color:rgb(0,0,168);">does</span> <span style="color:rgb(0,0,127);">the</span> <span style="color:rgb(0,0,127);">clock</span> <span style="color:rgb(136,0,0);">say</span>  
+</td>
+<td>
+ 5:00 
+</td>
+<td>
+ kerttuli 
+</td>
+<td>
+<img src="attention_images/140929_what_does_the_clock_say_cam.png" width=200 height=200>
+</td>
+<td>
+<img src="attention_images/140929_what_does_the_clock_say_refatt.png" width=200 height=200>
+</td>
+<td>
+<img src="attention_images/140929_what_does_the_clock_say_bestbertatt.png" width=200 height=200>
+</td>
+<td>
+<img src="attention_images/140929_what_does_the_clock_say_vqabaselineattim.png" width=200 height=200>
+</td>
+<td>
+<img src="attention_images/140929_what_does_the_clock_say_human.png" width=200 height=200>
+</td>
+<td>
+ True 
+</tr>
+<tr>
+</td>
+<td>
+ 83 
+</td>
+<td>
+<img src="https://vqa_mscoco_images.s3.amazonaws.com/val2014/COCO_val2014_000000244878.jpg" width=200 height=200>
+</td>
+<td>
+ <span style="color:rgb(0,124,255);">how</span> <span style="color:rgb(154,0,0);">many</span> <span style="color:rgb(0,12,255);">objects</span> <span style="color:rgb(163,255,83);">are</span> <span style="color:rgb(0,0,127);">there</span>  
+</td>
+<td>
+ many 
+</td>
+<td>
+ 9 
+</td>
+<td>
+<img src="attention_images/244878_how_many_objects_are_there_cam.png" width=200 height=200>
+</td>
+<td>
+<img src="attention_images/244878_how_many_objects_are_there_refatt.png" width=200 height=200>
+</td>
+<td>
+<img src="attention_images/244878_how_many_objects_are_there_bestbertatt.png" width=200 height=200>
+</td>
+<td>
+<img src="attention_images/244878_how_many_objects_are_there_vqabaselineattim.png" width=200 height=200>
+</td>
+<td>
+<img src="attention_images/244878_how_many_objects_are_there_human.png" width=200 height=200>
+</td>
+<td>
+ True 
+</tr>
+<tr>
+</td>
+<td>
+ 84 
+</td>
+<td>
+<img src="https://vqa_mscoco_images.s3.amazonaws.com/val2014/COCO_val2014_000000480664.jpg" width=200 height=200>
+</td>
+<td>
+ <span style="color:rgb(0,224,250);">what</span> <span style="color:rgb(0,0,127);">color</span> <span style="color:rgb(132,0,0);">are</span> <span style="color:rgb(0,0,127);">the</span> <span style="color:rgb(0,0,127);">flowers</span>  
+</td>
+<td>
+ yellow 
+</td>
+<td>
+ multi 
+</td>
+<td>
+<img src="attention_images/480664_what_color_are_the_flowers_cam.png" width=200 height=200>
+</td>
+<td>
+<img src="attention_images/480664_what_color_are_the_flowers_refatt.png" width=200 height=200>
+</td>
+<td>
+<img src="attention_images/480664_what_color_are_the_flowers_bestbertatt.png" width=200 height=200>
+</td>
+<td>
+<img src="attention_images/480664_what_color_are_the_flowers_vqabaselineattim.png" width=200 height=200>
+</td>
+<td>
+<img src="attention_images/480664_what_color_are_the_flowers_human.png" width=200 height=200>
+</td>
+<td>
+ True 
+</tr>
+<tr>
+</td>
+<td>
+ 85 
+</td>
+<td>
+<img src="https://vqa_mscoco_images.s3.amazonaws.com/val2014/COCO_val2014_000000357475.jpg" width=200 height=200>
+</td>
+<td>
+ <span style="color:rgb(0,0,127);">is</span> <span style="color:rgb(0,0,127);">the</span> <span style="color:rgb(0,0,127);">bathtub</span> <span style="color:rgb(0,0,127);">clean</span>  
+</td>
+<td>
+ yes 
+</td>
+<td>
+ no 
+</td>
+<td>
+<img src="attention_images/357475_is_the_bathtub_clean_cam.png" width=200 height=200>
+</td>
+<td>
+<img src="attention_images/357475_is_the_bathtub_clean_refatt.png" width=200 height=200>
+</td>
+<td>
+<img src="attention_images/357475_is_the_bathtub_clean_bestbertatt.png" width=200 height=200>
+</td>
+<td>
+<img src="attention_images/357475_is_the_bathtub_clean_vqabaselineattim.png" width=200 height=200>
+</td>
+<td>
+<img src="attention_images/357475_is_the_bathtub_clean_human.png" width=200 height=200>
+</td>
+<td>
+ False 
+</tr>
+<tr>
+</td>
+<td>
+ 86 
+</td>
+<td>
+<img src="https://vqa_mscoco_images.s3.amazonaws.com/val2014/COCO_val2014_000000466273.jpg" width=200 height=200>
+</td>
+<td>
+ <span style="color:rgb(218,255,28);">what</span> <span style="color:rgb(136,0,0);">city</span> <span style="color:rgb(86,255,160);">and</span> <span style="color:rgb(255,152,0);">country</span> <span style="color:rgb(0,0,127);">is</span> <span style="color:rgb(0,92,255);">featured</span>  
+</td>
+<td>
+ london 
+</td>
+<td>
+ london, england 
+</td>
+<td>
+<img src="attention_images/466273_what_city_and_country_is_featured_cam.png" width=200 height=200>
+</td>
+<td>
+<img src="attention_images/466273_what_city_and_country_is_featured_refatt.png" width=200 height=200>
+</td>
+<td>
+<img src="attention_images/466273_what_city_and_country_is_featured_bestbertatt.png" width=200 height=200>
+</td>
+<td>
+<img src="attention_images/466273_what_city_and_country_is_featured_vqabaselineattim.png" width=200 height=200>
+</td>
+<td>
+<img src="attention_images/466273_what_city_and_country_is_featured_human.png" width=200 height=200>
+</td>
+<td>
+ True 
+</tr>
+<tr>
+</td>
+<td>
+ 87 
+</td>
+<td>
+<img src="https://vqa_mscoco_images.s3.amazonaws.com/val2014/COCO_val2014_000000463647.jpg" width=200 height=200>
+</td>
+<td>
+ <span style="color:rgb(136,0,0);">where</span> <span style="color:rgb(0,0,127);">is</span> <span style="color:rgb(0,0,127);">the</span> <span style="color:rgb(192,255,54);">detour</span> <span style="color:rgb(168,0,0);">to</span>  
+</td>
+<td>
+ street 
+</td>
+<td>
+ oxford street 
+</td>
+<td>
+<img src="attention_images/463647_where_is_the_detour_to_cam.png" width=200 height=200>
+</td>
+<td>
+<img src="attention_images/463647_where_is_the_detour_to_refatt.png" width=200 height=200>
+</td>
+<td>
+<img src="attention_images/463647_where_is_the_detour_to_bestbertatt.png" width=200 height=200>
+</td>
+<td>
+<img src="attention_images/463647_where_is_the_detour_to_vqabaselineattim.png" width=200 height=200>
+</td>
+<td>
+<img src="attention_images/463647_where_is_the_detour_to_human.png" width=200 height=200>
+</td>
+<td>
+ True 
+</tr>
+<tr>
+</td>
+<td>
+ 88 
+</td>
+<td>
+<img src="https://vqa_mscoco_images.s3.amazonaws.com/val2014/COCO_val2014_000000266922.jpg" width=200 height=200>
+</td>
+<td>
+ <span style="color:rgb(172,0,0);">are</span> <span style="color:rgb(0,0,127);">the</span> <span style="color:rgb(241,252,5);">people</span> <span style="color:rgb(0,0,200);">looking</span> <span style="color:rgb(0,0,127);">uphill</span>  
+</td>
+<td>
+ no 
+</td>
+<td>
+ no 
+</td>
+<td>
+<img src="attention_images/266922_are_the_people_looking_uphill_cam.png" width=200 height=200>
+</td>
+<td>
+<img src="attention_images/266922_are_the_people_looking_uphill_refatt.png" width=200 height=200>
+</td>
+<td>
+<img src="attention_images/266922_are_the_people_looking_uphill_bestbertatt.png" width=200 height=200>
+</td>
+<td>
+<img src="attention_images/266922_are_the_people_looking_uphill_vqabaselineattim.png" width=200 height=200>
+</td>
+<td>
+<img src="attention_images/266922_are_the_people_looking_uphill_human.png" width=200 height=200>
+</td>
+<td>
+ False 
+</tr>
+<tr>
+</td>
+<td>
+ 89 
+</td>
+<td>
+<img src="https://vqa_mscoco_images.s3.amazonaws.com/val2014/COCO_val2014_000000290515.jpg" width=200 height=200>
+</td>
+<td>
+ <span style="color:rgb(209,0,0);">are</span> <span style="color:rgb(0,0,127);">the</span> <span style="color:rgb(0,0,127);">person's</span> <span style="color:rgb(0,0,127);">veins</span>  
+</td>
+<td>
+ yes 
+</td>
+<td>
+ yes 
+</td>
+<td>
+<img src="attention_images/290515_are_the_person's_veins_visible_cam.png" width=200 height=200>
+</td>
+<td>
+<img src="attention_images/290515_are_the_person's_veins_visible_refatt.png" width=200 height=200>
+</td>
+<td>
+<img src="attention_images/290515_are_the_person's_veins_visible_bestbertatt.png" width=200 height=200>
+</td>
+<td>
+<img src="attention_images/290515_are_the_person's_veins_visible_vqabaselineattim.png" width=200 height=200>
+</td>
+<td>
+<img src="attention_images/290515_are_the_person's_veins_visible_human.png" width=200 height=200>
+</td>
+<td>
+ False 
+</tr>
+<tr>
+</td>
+<td>
+ 90 
+</td>
+<td>
+<img src="https://vqa_mscoco_images.s3.amazonaws.com/val2014/COCO_val2014_000000121041.jpg" width=200 height=200>
+</td>
+<td>
+ <span style="color:rgb(0,0,127);">is</span> <span style="color:rgb(0,0,127);">a</span> <span style="color:rgb(204,0,0);">hurricane</span> <span style="color:rgb(24,255,221);">going</span> <span style="color:rgb(0,0,127);">on</span>  
+</td>
+<td>
+ no 
+</td>
+<td>
+ no 
+</td>
+<td>
+<img src="attention_images/121041_is_a_hurricane_going_on_cam.png" width=200 height=200>
+</td>
+<td>
+<img src="attention_images/121041_is_a_hurricane_going_on_refatt.png" width=200 height=200>
+</td>
+<td>
+<img src="attention_images/121041_is_a_hurricane_going_on_bestbertatt.png" width=200 height=200>
+</td>
+<td>
+<img src="attention_images/121041_is_a_hurricane_going_on_vqabaselineattim.png" width=200 height=200>
+</td>
+<td>
+<img src="attention_images/121041_is_a_hurricane_going_on_human.png" width=200 height=200>
+</td>
+<td>
+ False 
+</tr>
+<tr>
+</td>
+<td>
+ 91 
+</td>
+<td>
+<img src="https://vqa_mscoco_images.s3.amazonaws.com/val2014/COCO_val2014_000000563195.jpg" width=200 height=200>
+</td>
+<td>
+ <span style="color:rgb(182,0,0);">what</span> <span style="color:rgb(0,0,127);">color</span> <span style="color:rgb(0,0,127);">is</span> <span style="color:rgb(0,0,127);">the</span> <span style="color:rgb(0,0,127);">cab</span> <span style="color:rgb(0,0,127);">of</span> <span style="color:rgb(0,0,127);">the</span> <span style="color:rgb(0,0,127);">truck</span>  
+</td>
+<td>
+ red 
+</td>
+<td>
+ red 
+</td>
+<td>
+<img src="attention_images/563195_what_color_is_the_cab_of_the_truck_cam.png" width=200 height=200>
+</td>
+<td>
+<img src="attention_images/563195_what_color_is_the_cab_of_the_truck_refatt.png" width=200 height=200>
+</td>
+<td>
+<img src="attention_images/563195_what_color_is_the_cab_of_the_truck_bestbertatt.png" width=200 height=200>
+</td>
+<td>
+<img src="attention_images/563195_what_color_is_the_cab_of_the_truck_vqabaselineattim.png" width=200 height=200>
+</td>
+<td>
+<img src="attention_images/563195_what_color_is_the_cab_of_the_truck_human.png" width=200 height=200>
+</td>
+<td>
+ True 
+</tr>
+<tr>
+</td>
+<td>
+ 92 
+</td>
+<td>
+<img src="https://vqa_mscoco_images.s3.amazonaws.com/val2014/COCO_val2014_000000117458.jpg" width=200 height=200>
+</td>
+<td>
+ <span style="color:rgb(0,0,127);">is</span> <span style="color:rgb(0,0,127);">the</span> <span style="color:rgb(0,0,127);">motorcycle</span> <span style="color:rgb(0,0,127);">rider</span> <span style="color:rgb(0,0,127);">wearing</span> <span style="color:rgb(0,0,127);">boots</span>  
+</td>
+<td>
+ no 
+</td>
+<td>
+ yes 
+</td>
+<td>
+<img src="attention_images/117458_is_the_motorcycle_rider_wearing_boots_cam.png" width=200 height=200>
+</td>
+<td>
+<img src="attention_images/117458_is_the_motorcycle_rider_wearing_boots_refatt.png" width=200 height=200>
+</td>
+<td>
+<img src="attention_images/117458_is_the_motorcycle_rider_wearing_boots_bestbertatt.png" width=200 height=200>
+</td>
+<td>
+<img src="attention_images/117458_is_the_motorcycle_rider_wearing_boots_vqabaselineattim.png" width=200 height=200>
+</td>
+<td>
+<img src="attention_images/117458_is_the_motorcycle_rider_wearing_boots_human.png" width=200 height=200>
+</td>
+<td>
+ False 
+</tr>
+<tr>
+</td>
+<td>
+ 93 
+</td>
+<td>
+<img src="https://vqa_mscoco_images.s3.amazonaws.com/val2014/COCO_val2014_000000133927.jpg" width=200 height=200>
+</td>
+<td>
+ <span style="color:rgb(255,63,0);">what</span> <span style="color:rgb(0,0,127);">sport</span> <span style="color:rgb(0,0,127);">is</span> <span style="color:rgb(0,0,127);">the</span> <span style="color:rgb(0,0,127);">boy</span> <span style="color:rgb(0,0,127);">playing</span>  
+</td>
+<td>
+ tennis 
+</td>
+<td>
+ tennis 
+</td>
+<td>
+<img src="attention_images/133927_what_sport_is_the_boy_playing_cam.png" width=200 height=200>
+</td>
+<td>
+<img src="attention_images/133927_what_sport_is_the_boy_playing_refatt.png" width=200 height=200>
+</td>
+<td>
+<img src="attention_images/133927_what_sport_is_the_boy_playing_bestbertatt.png" width=200 height=200>
+</td>
+<td>
+<img src="attention_images/133927_what_sport_is_the_boy_playing_vqabaselineattim.png" width=200 height=200>
+</td>
+<td>
+<img src="attention_images/133927_what_sport_is_the_boy_playing_human.png" width=200 height=200>
+</td>
+<td>
+ False 
+</tr>
+<tr>
+</td>
+<td>
+ 94 
+</td>
+<td>
+<img src="https://vqa_mscoco_images.s3.amazonaws.com/val2014/COCO_val2014_000000424135.jpg" width=200 height=200>
+</td>
+<td>
+ <span style="color:rgb(0,0,127);">highest</span> <span style="color:rgb(136,0,0);">number</span> <span style="color:rgb(0,0,127);">shown</span> <span style="color:rgb(0,0,127);">is</span> <span style="color:rgb(255,148,0);">60</span>  
+</td>
+<td>
+ yes 
+</td>
+<td>
+ yes 
+</td>
+<td>
+<img src="attention_images/424135_highest_number_shown_is_60_cam.png" width=200 height=200>
+</td>
+<td>
+<img src="attention_images/424135_highest_number_shown_is_60_refatt.png" width=200 height=200>
+</td>
+<td>
+<img src="attention_images/424135_highest_number_shown_is_60_bestbertatt.png" width=200 height=200>
+</td>
+<td>
+<img src="attention_images/424135_highest_number_shown_is_60_vqabaselineattim.png" width=200 height=200>
+</td>
+<td>
+<img src="attention_images/424135_highest_number_shown_is_60_human.png" width=200 height=200>
+</td>
+<td>
+ True 
+</tr>
+<tr>
+</td>
+<td>
+ 95 
+</td>
+<td>
+<img src="https://vqa_mscoco_images.s3.amazonaws.com/val2014/COCO_val2014_000000017364.jpg" width=200 height=200>
+</td>
+<td>
+ <span style="color:rgb(204,0,0);">what</span> <span style="color:rgb(0,0,127);">color</span> <span style="color:rgb(0,0,127);">is</span> <span style="color:rgb(0,0,127);">man's</span> <span style="color:rgb(0,0,127);">suit</span>  
+</td>
+<td>
+ black 
+</td>
+<td>
+ tan 
+</td>
+<td>
+<img src="attention_images/17364_what_color_is_man's_suit_jacket_cam.png" width=200 height=200>
+</td>
+<td>
+<img src="attention_images/17364_what_color_is_man's_suit_jacket_refatt.png" width=200 height=200>
+</td>
+<td>
+<img src="attention_images/17364_what_color_is_man's_suit_jacket_bestbertatt.png" width=200 height=200>
+</td>
+<td>
+<img src="attention_images/17364_what_color_is_man's_suit_jacket_vqabaselineattim.png" width=200 height=200>
+</td>
+<td>
+<img src="attention_images/17364_what_color_is_man's_suit_jacket_human.png" width=200 height=200>
+</td>
+<td>
+ True 
+</tr>
+<tr>
+</td>
+<td>
+ 96 
+</td>
+<td>
+<img src="https://vqa_mscoco_images.s3.amazonaws.com/val2014/COCO_val2014_000000015335.jpg" width=200 height=200>
+</td>
+<td>
+ <span style="color:rgb(0,0,127);">is</span> <span style="color:rgb(255,115,0);">this</span> <span style="color:rgb(254,237,0);">indoors</span>  
+</td>
+<td>
+ yes 
+</td>
+<td>
+ yes 
+</td>
+<td>
+<img src="attention_images/15335_is_this_indoors_cam.png" width=200 height=200>
+</td>
+<td>
+<img src="attention_images/15335_is_this_indoors_refatt.png" width=200 height=200>
+</td>
+<td>
+<img src="attention_images/15335_is_this_indoors_bestbertatt.png" width=200 height=200>
+</td>
+<td>
+<img src="attention_images/15335_is_this_indoors_vqabaselineattim.png" width=200 height=200>
+</td>
+<td>
+<img src="attention_images/15335_is_this_indoors_human.png" width=200 height=200>
+</td>
+<td>
+ False 
+</tr>
+<tr>
+</td>
+<td>
+ 97 
+</td>
+<td>
+<img src="https://vqa_mscoco_images.s3.amazonaws.com/val2014/COCO_val2014_000000223198.jpg" width=200 height=200>
+</td>
+<td>
+ <span style="color:rgb(177,0,0);">what</span> <span style="color:rgb(0,0,127);">is</span> <span style="color:rgb(0,0,127);">the</span> <span style="color:rgb(0,0,127);">person</span> <span style="color:rgb(0,0,127);">wearing</span>  
+</td>
+<td>
+ tie 
+</td>
+<td>
+ tie 
+</td>
+<td>
+<img src="attention_images/223198_what_is_the_person_wearing_cam.png" width=200 height=200>
+</td>
+<td>
+<img src="attention_images/223198_what_is_the_person_wearing_refatt.png" width=200 height=200>
+</td>
+<td>
+<img src="attention_images/223198_what_is_the_person_wearing_bestbertatt.png" width=200 height=200>
+</td>
+<td>
+<img src="attention_images/223198_what_is_the_person_wearing_vqabaselineattim.png" width=200 height=200>
+</td>
+<td>
+<img src="attention_images/223198_what_is_the_person_wearing_human.png" width=200 height=200>
+</td>
+<td>
+ False 
+</tr>
+<tr>
+</td>
+<td>
+ 98 
+</td>
+<td>
+<img src="https://vqa_mscoco_images.s3.amazonaws.com/val2014/COCO_val2014_000000392640.jpg" width=200 height=200>
+</td>
+<td>
+ <span style="color:rgb(234,255,12);">would</span> <span style="color:rgb(0,0,177);">you</span> <span style="color:rgb(0,164,255);">like</span> <span style="color:rgb(255,170,0);">to</span> <span style="color:rgb(255,152,0);">be</span> <span style="color:rgb(0,0,127);">the</span> <span style="color:rgb(0,0,127);">person</span> <span style="color:rgb(159,0,0);">filming</span> <span style="color:rgb(255,177,0);">this</span> <span style="color:rgb(0,0,127);">shot</span>  
+</td>
+<td>
+ yes 
+</td>
+<td>
+ yes 
+</td>
+<td>
+<img src="attention_images/392640_would_you_like_to_be_the_person_filming_this_shot_cam.png" width=200 height=200>
+</td>
+<td>
+<img src="attention_images/392640_would_you_like_to_be_the_person_filming_this_shot_refatt.png" width=200 height=200>
+</td>
+<td>
+<img src="attention_images/392640_would_you_like_to_be_the_person_filming_this_shot_bestbertatt.png" width=200 height=200>
+</td>
+<td>
+<img src="attention_images/392640_would_you_like_to_be_the_person_filming_this_shot_vqabaselineattim.png" width=200 height=200>
+</td>
+<td>
+<img src="attention_images/392640_would_you_like_to_be_the_person_filming_this_shot_human.png" width=200 height=200>
+</td>
+<td>
+ False 
+</tr>
+<tr>
+</td>
+<td>
+ 99 
+</td>
+<td>
+<img src="https://vqa_mscoco_images.s3.amazonaws.com/val2014/COCO_val2014_000000547493.jpg" width=200 height=200>
+</td>
+<td>
+ <span style="color:rgb(92,255,154);">what</span> <span style="color:rgb(0,0,127);">shape</span> <span style="color:rgb(0,0,127);">is</span> <span style="color:rgb(136,0,0);">this</span> <span style="color:rgb(0,0,127);">plate</span>  
+</td>
+<td>
+ rectangle 
+</td>
+<td>
+ square 
+</td>
+<td>
+<img src="attention_images/547493_what_shape_is_this_plate_cam.png" width=200 height=200>
+</td>
+<td>
+<img src="attention_images/547493_what_shape_is_this_plate_refatt.png" width=200 height=200>
+</td>
+<td>
+<img src="attention_images/547493_what_shape_is_this_plate_bestbertatt.png" width=200 height=200>
+</td>
+<td>
+<img src="attention_images/547493_what_shape_is_this_plate_vqabaselineattim.png" width=200 height=200>
+</td>
+<td>
+<img src="attention_images/547493_what_shape_is_this_plate_human.png" width=200 height=200>
+</td>
+<td>
+ True 
+</td>
+</tr>
+<hr />
+</div></body>
+</html>

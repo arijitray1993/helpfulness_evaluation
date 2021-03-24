@@ -13,7 +13,7 @@
 <body>
     <div class="jumbotron jumbotron-fluid">
         <div class="container-fluid">
-            <h1>Know Thy User's Mind: Generating Helpful Explanations by Modeling Human Interpretation</h1>
+            <h1>Knowing What VQA Doesn't: Pointing to Error-Inducing Regions to Improve Explanation Helpfulness</h1>
             <p>Arijit Ray, Michael Cogswell, Xiao Lin, Kamran Alipour, Ajay Divakaran, Yi Yao, Giedrius Burachas</p>
             
         </div> 
@@ -23,30 +23,49 @@
 
         <div class="row">
             <div class="card">
+                <div class="card-header">
+                    Abstract
+                </div>
                 <div class="card-body">
-                    Abstract:
-                    <hr>
-                    Attention maps, a popular explanation method for Visual Question Answering (VQA), 
-                    are supposed to help users understand models by highlighting parts of the image/question 
-                    used by the model to infer answers. However, we observe a significant number of cases where 
-                    explanations show a VQA model paying attention to relevant regions, yet the model fails to 
-                    generate the correct answer. These explanations can mislead users who guess the model will be 
-                    correct when it looks at relevant regions. In this paper we simulate this thought process, 
-                    generating helpful explanations by ensuring correctness can be judged from relevance. 
-                    We propose two ways to generate new explanations: 1) choosing transformer-based attention maps 
-                    that optimize our notion of helpfulness and 2) training a Justifying Module that learns to point 
-                    to justifying evidence and generate error maps that point to regions where the model may make a
-                    mistake. We design automated metrics of helpfulness based on our idea of human interpretation 
-                    and show that our explanations are more helpful according to these metrics. To verify our metrics
-                    and explanations, we conduct user studies to show that users can predict the model's performance
-                    better when using our more helpful explanations.
+                    Attention maps, a popular heatmap-based explanation method for Visual Question Answering (VQA), 
+                    are supposed to help users understand the model by highlighting portions of the image/question 
+                    used by the model to infer answers. However, we see that users are often misled by current attention 
+                    map visualizations that point to relevant regions despite the model producing an incorrect answer.
+                    Hence, we propose Error Maps that clarify the error by highlighting image regions where the model 
+                    is prone to err. Error maps can indicate when a correctly attended region may be processed incorrectly 
+                    leading to an incorrect answer, and hence, improve users' understanding of those cases.To evaluate
+                    our new explanations, we further introduce a metric that simulates users' interpretation of 
+                    explanations to evaluate their potential helpfulness to understand model correctness. We finally
+                    conduct user studies to see that our new explanations help users understand model correctness 
+                    better than baselines by an expected 30% and that our proxy helpfulness metrics correlate 
+                    strongly (&#961;>0.97) with how well users can predict model correctness.
                 </div>
             </div>
         </div>
         
-        <div class="row">
-            ArXiv Paper and Online evaluation platform coming soon...
+        <!--
+        <div class-"row">
+            <h2>High Level Summary:</h2>
+            <h3>Error Maps help understand VQA performance better</h3>
+            <p></p>
+            <h3>We also designed a proxy metric to evaluate potential helpfulness of attention/error maps to users to predict model performance</h3>
+            <p></p>
         </div>
+        -->
+
+        <div class="row">
+            ArXiv Paper coming soon...
+        </div>
+
+        <div class="row">
+            Evaluation Server coming up! Upload your attention/error map values to evaluate the potential helpfulness score (HELP_Z).
+        </div>
+
+
+        <div class="row">
+            <a href="attention_refine.html"> Qualitative examples of our attention and error maps. </a>
+        </div>
+
 
     </div>
 
