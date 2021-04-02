@@ -14,7 +14,15 @@
     <div class="jumbotron jumbotron-fluid">
         <div class="container-fluid">
             <h1>Knowing What VQA Doesn't: Pointing to Error-Inducing Regions to Improve Explanation Helpfulness</h1>
-            <p>Arijit Ray, Michael Cogswell, Xiao Lin, Kamran Alipour, Ajay Divakaran, Yi Yao, Giedrius Burachas</p>
+            <p>
+                <a href="https://filebox.ece.vt.edu/~ray93/">Arijit Ray</a>, 
+                <a href="https://mcogswell.io/">Michael Cogswell</a>, 
+                <a href="https://scholar.google.com/citations?user=zSIbUH4AAAAJ&hl=en">Xiao Lin</a>, 
+                <a href="https://www.linkedin.com/in/kamran-alipour-586578b3/">Kamran Alipour</a>, 
+                <a href="https://www.sri.com/bios/ajay-divakaran/">Ajay Divakaran</a>, 
+                <a href="https://scholar.google.com/citations?user=iD6QaXcAAAAJ&hl=en">Yi Yao</a>, 
+                <a href="https://scholar.google.com/citations?user=KrkPjxMAAAAJ&hl=en">Giedrius Burachas</a>
+            </p>
             
         </div> 
     </div>
@@ -22,23 +30,25 @@
     <div class='container'>
 
         <div class="row">
-            <div class="card">
-                <div class="card-header">
-                    Abstract
-                </div>
-                <div class="card-body">
-                    Attention maps, a popular heatmap-based explanation method for Visual Question Answering (VQA), 
-                    are supposed to help users understand the model by highlighting portions of the image/question 
-                    used by the model to infer answers. However, we see that users are often misled by current attention 
-                    map visualizations that point to relevant regions despite the model producing an incorrect answer.
-                    Hence, we propose Error Maps that clarify the error by highlighting image regions where the model 
-                    is prone to err. Error maps can indicate when a correctly attended region may be processed incorrectly 
-                    leading to an incorrect answer, and hence, improve users' understanding of those cases.To evaluate
-                    our new explanations, we further introduce a metric that simulates users' interpretation of 
-                    explanations to evaluate their potential helpfulness to understand model correctness. We finally
-                    conduct user studies to see that our new explanations help users understand model correctness 
-                    better than baselines by an expected 30% and that our proxy helpfulness metrics correlate 
-                    strongly (&#961;>0.97) with how well users can predict model correctness.
+            <div class="col">
+                <div class="card">
+                    <div class="card-header">
+                        Abstract
+                    </div>
+                    <div class="card-body">
+                        Attention maps, a popular heatmap-based explanation method for Visual Question Answering (VQA), 
+                        are supposed to help users understand the model by highlighting portions of the image/question 
+                        used by the model to infer answers. However, we see that users are often misled by current attention 
+                        map visualizations that point to relevant regions despite the model producing an incorrect answer.
+                        Hence, we propose Error Maps that clarify the error by highlighting image regions where the model 
+                        is prone to err. Error maps can indicate when a correctly attended region may be processed incorrectly 
+                        leading to an incorrect answer, and hence, improve users' understanding of those cases.To evaluate
+                        our new explanations, we further introduce a metric that simulates users' interpretation of 
+                        explanations to evaluate their potential helpfulness to understand model correctness. We finally
+                        conduct user studies to see that our new explanations help users understand model correctness 
+                        better than baselines by an expected 30% and that our proxy helpfulness metrics correlate 
+                        strongly (&#961;>0.97) with how well users can predict model correctness.
+                    </div>
                 </div>
             </div>
         </div>
@@ -67,6 +77,17 @@
             </div>
         </div>
 
+
+        <div class="row">
+            <div class="col">
+                <div class="card-body">
+                    <a href="attention_refine.html"> Qualitative examples of our attention and error maps. </a>
+
+                </div>
+                
+            </div>
+        </div>
+
         <div class="row">
             <div class="col">
                 Evaluation Server coming up! Upload your attention/error map values to evaluate the potential helpfulness score (HELP_Z).
@@ -75,9 +96,7 @@
         </div>
 
 
-        <div class="row">
-            <a href="attention_refine.html"> Qualitative examples of our attention and error maps. </a>
-        </div>
+       
 
 
     </div>
